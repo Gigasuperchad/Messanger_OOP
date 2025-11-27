@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.messanger_oop.MessengerController" spacing="10" style="-fx-padding: 10;">
+    <Label text="Мессенджер" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+
+    <HBox spacing="10">
+        <Label text="Имя пользователя:"/>
+        <TextField fx:id="usernameField" promptText="Введите ваше имя"/>
+        <Button fx:id="connectButton" text="Подключиться" onAction="#connectToServer"/>
+    </HBox>
+
+    <SplitPane dividerPositions="0.7">
+        <VBox>
+            <Label text="Сообщения:"/>
+            <TextArea fx:id="messagesArea" editable="false" VBox.vgrow="ALWAYS"/>
+
+            <HBox spacing="5">
+                <TextField fx:id="messageField" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
+                <Button fx:id="sendButton" text="Отправить" onAction="#sendMessage"/>
+            </HBox>
+        </VBox>
+
+        <VBox>
+            <Label text="Подключенные пользователи:"/>
+            <ListView fx:id="usersList" VBox.vgrow="ALWAYS"/>
+        </VBox>
+    </SplitPane>
+
+    <Button fx:id="disconnectButton" text="Отключиться" onAction="#disconnectFromServer"/>
+</VBox>
