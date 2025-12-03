@@ -1,14 +1,47 @@
 package com.example.messanger_oop;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.ListCell;
 
 public class HelloController {
     @FXML
-    private Label welcomeText;
+    public ListView<Chat> Chat_list;
+
+    private Repository repo;
 
     @FXML
-    protected void onHelloButtonClick() {
-        welcomeText.setText("Welcome to JavaFX Application!");
+    public void initialize() {
+        // Настройка отображения чатов
+        Chat_list.setCellFactory(lv -> new ListCell<Chat>() {
+            @Override
+            protected void updateItem(Chat chat, boolean empty) {
+                super.updateItem(chat, empty);
+                if (empty || chat == null) {
+                    setText(null);
+                } else {
+                    // Простое отображение
+                    setText("Чат #" + chat.getId());
+                }
+            }
+        });
+
+        // Обработчик клика на чат
+        Chat_list.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 1) {
+                Chat selected = Chat_list.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    System.out.println("Выбран чат: " + selected);
+                    AppManager.getInstance().switchToChatScene(selected);
+                }
+            }
+        });
+    }
+
+    public void setRepository(Repository repository) {
+        this.repo = repository;
+        if (Chat_list != null && repo != null) {
+            Chat_list.setItems(repo.getChats());
+        }
     }
 }

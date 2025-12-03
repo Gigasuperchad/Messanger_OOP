@@ -46,8 +46,17 @@ public class Server {
     }
 
     public void broadcastMessage(String sender, String message) {
-        messageRepository.saveMessage(sender, message, new Date());
+        // Исправлено: создаем временный чат для сохранения сообщения
+        // В реальной логике нужно определить, в какой чат сохранять
+        List<User> users = new ArrayList<>();
+        users.add(new User(sender));
+        Chat tempChat = new Chat(users);
 
+        // Сохраняем сообщение
+        User senderUser = new User(sender);
+        messageRepository.saveMessage(senderUser, message, tempChat);
+
+        // Отправляем всем клиентам
         for (ClientHandler client : connectedClients.values()) {
             if (!client.getUsername().equals(sender)) {
                 client.sendMessage(sender + ": " + message);
@@ -58,7 +67,17 @@ public class Server {
     public void sendPrivateMessage(String sender, String recipient, String message) {
         ClientHandler recipientHandler = connectedClients.get(recipient);
         if (recipientHandler != null) {
-            messageRepository.saveMessage(sender, "(private to " + recipient + ") " + message, new Date());
+            // Создаем чат для приватного сообщения
+            List<User> chatUsers = new ArrayList<>();
+            chatUsers.add(new User(sender));
+            chatUsers.add(new User(recipient));
+            Chat privateChat = new Chat(chatUsers);
+
+            // Сохраняем сообщение
+            User senderUser = new User(sender);
+            messageRepository.saveMessage(senderUser, "(private to " + recipient + ") " + message, privateChat);
+
+            // Отправляем приватное сообщение
             recipientHandler.sendMessage("[Private from " + sender + "]: " + message);
         }
     }
