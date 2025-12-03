@@ -1,17 +1,16 @@
 package com.example.messanger_oop;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.Button;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextArea;
-import javafx.scene.control.ListCell;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import java.util.Date;
+import javafx.scene.control.Button;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import java.util.List;
 
 public class ChatController {
     @FXML
-    private ListView<Message> messageListView;
+    private ListView<String> messageListView;
 
     @FXML
     private TextArea messageTextArea;
@@ -19,84 +18,106 @@ public class ChatController {
     @FXML
     private Button sendButton;
 
-    private Chat currentChat;
     private Repository repository;
+    private Chat chat;
     private User currentUser;
+    private ObservableList<String> messages;
 
     @FXML
     public void initialize() {
-        currentUser = AppManager.getInstance().getCurrentUser();
+        messages = FXCollections.observableArrayList();
+        messageListView.setItems(messages);
 
-        // Настройка отображения сообщений
-        messageListView.setCellFactory(lv -> new ListCell<Message>() {
-            @Override
-            protected void updateItem(Message message, boolean empty) {
-                super.updateItem(message, empty);
-                if (empty || message == null) {
-                    setText(null);
-                } else {
-                    String senderName = message.getSender() != null ?
-                            message.getSender().getNick() : "Неизвестно";
-                    String time = message.getTimestamp() != null ?
-                            message.getTimestamp().toString() : "Недавно";
-                    setText(String.format("[%s] %s: %s",
-                            time, senderName, message.getContent()));
-                }
+        // Добавляем обработчик клавиши Enter
+        messageTextArea.setOnKeyPressed(event -> {
+            if (event.getCode() == javafx.scene.input.KeyCode.ENTER) {
+                handleSendMessage();
+                event.consume();
             }
         });
-    }
-
-    public void setChat(Chat chat) {
-        this.currentChat = chat;
-        if (chat != null && chat.getMessages() != null) {
-            messageListView.setItems(chat.getMessages());
-
-            // Прокрутка к последнему сообщению
-            if (!chat.getMessages().isEmpty()) {
-                messageListView.scrollTo(chat.getMessages().size() - 1);
-            }
-        }
     }
 
     public void setRepository(Repository repository) {
         this.repository = repository;
     }
 
-    @FXML
-    private void handleSendMessage() {
-        sendMessage();
+    public void setChat(Chat chat) {
+        this.chat = chat;
+        updateMessageList();
     }
 
-    @FXML
-    private void handleKeyPressed(KeyEvent event) {
-        if (event.getCode() == KeyCode.ENTER && !event.isShiftDown()) {
-            event.consume(); // Предотвращаем перенос строки
-            sendMessage();
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        System.out.println("Текущий пользователь установлен: " +
+                (user != null ? user.getNick() : "null"));
+    }
+
+    private void updateMessageList() {
+        if (chat != null) {
+            messages.clear();
+            List<Message> chatMessages = chat.getMessages();
+            if (chatMessages != null) {
+                for (Message message : chatMessages) {
+                    String timestamp = "Неизвестное время";
+                    if (message.getTimestamp() != null) {
+                        timestamp = message.getTimestamp().toString();
+                    }
+
+                    String senderNick = "Неизвестный";
+                    if (message.getSender() != null) {
+                        senderNick = message.getSender().getNick();
+                    }
+
+                    messages.add(timestamp + " - " + senderNick + ": " +
+                            (message.getContent() != null ? message.getContent() : ""));
+                }
+            } else {
+                System.err.println("Сообщения в чате null");
+            }
+        } else {
+            System.err.println("Чат null");
         }
     }
 
-    private void sendMessage() {
+    @FXML
+    private void handleSendMessage() {
         String text = messageTextArea.getText().trim();
-        if (!text.isEmpty() && currentChat != null) {
-            // Создаем новое сообщение
-            Message newMessage = new Message(currentUser, text, new Date());
 
-            // Отправляем сообщение в чат
-            currentChat.send_message(newMessage);
+        // Отладочная информация
+        System.out.println("=== Отправка сообщения ===");
+        System.out.println("Текст: " + text);
+        System.out.println("Чат: " + (chat != null ? chat.getChatName() : "null"));
+        System.out.println("Текущий пользователь: " +
+                (currentUser != null ? currentUser.getNick() : "null"));
+        System.out.println("Репозиторий: " + (repository != null ? "установлен" : "null"));
 
-            // Очищаем поле ввода
-            messageTextArea.clear();
+        if (!text.isEmpty() && chat != null && currentUser != null) {
+            try {
+                Message message = new Message(currentUser, text, new java.util.Date());
+                chat.send_message(message);
 
-            // Прокрутка к последнему сообщению
-            if (messageListView.getItems().size() > 0) {
-                messageListView.scrollTo(messageListView.getItems().size() - 1);
+                if (repository != null) {
+                    repository.send_msg(chat, text);
+                }
+
+                updateMessageList();
+                messageTextArea.clear();
+                System.out.println("Сообщение успешно отправлено!");
+            } catch (Exception e) {
+                System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.err.println("Не могу отправить сообщение. Проверьте условия:");
+            System.err.println("1. Текст не пустой: " + !text.isEmpty());
+            System.err.println("2. Чат не null: " + (chat != null));
+            System.err.println("3. Пользователь не null: " + (currentUser != null));
         }
     }
 
     @FXML
     private void handleBackToChatList() {
-        // Возврат к списку чатов
+        System.out.println("Возврат к списку чатов...");
         AppManager.getInstance().switchToChatList();
     }
 }

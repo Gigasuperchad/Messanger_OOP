@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+
+<VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
+      fx:controller="com.example.messanger_oop.MessengerController">
+
+    <!-- Шапка с информацией о пользователе -->
+    <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10; -fx-background-color: #f0f0f0;">
+        <ImageView fx:id="userAvatarView" fitWidth="40" fitHeight="40">
+            <image>
+                <Image url="@default-avatar.png" />
+            </image>
+        </ImageView>
+        <Label fx:id="userNameLabel" text="Гость" style="-fx-font-size: 16px; -fx-font-weight: bold;" />
+    </HBox>
+
+    <!-- Основное содержимое -->
+    <VBox spacing="10" style="-fx-padding: 10;">
+        <!-- Поле для ввода имени (если не зарегистрирован) -->
+        <HBox spacing="10" alignment="CENTER_LEFT">
+            <Label text="Имя в чате:" />
+            <TextField fx:id="usernameField" prefWidth="150" />
+            <Button fx:id="connectButton" text="Подключиться" onAction="#connectToServer" />
+            <Button fx:id="disconnectButton" text="Отключиться" onAction="#disconnectFromServer" />
+        </HBox>
+
+        <!-- Список пользователей и чат -->
+        <HBox spacing="10">
+            <!-- Список пользователей -->
+            <VBox spacing="5" prefWidth="200">
+                <Label text="Онлайн пользователи:" style="-fx-font-weight: bold;" />
+                <ListView fx:id="usersList" prefHeight="300" />
+            </VBox>
+
+            <!-- Область сообщений -->
+            <VBox spacing="5" VBox.vgrow="ALWAYS">
+                <Label text="Сообщения:" style="-fx-font-weight: bold;" />
+                <TextArea fx:id="messagesArea" prefHeight="300" editable="false"
+                          wrapText="true" />
+
+                <!-- Отправка сообщений -->
+                <HBox spacing="5">
+                    <TextField fx:id="messageField" HBox.hgrow="ALWAYS" />
+                    <Button fx:id="sendButton" text="Отправить" onAction="#sendMessage" />
+                </HBox>
+            </VBox>
+        </HBox>
+    </VBox>
+</VBox>

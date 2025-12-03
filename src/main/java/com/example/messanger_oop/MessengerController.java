@@ -3,9 +3,12 @@ package com.example.messanger_oop;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.Base64;
 
 public class MessengerController {
     @FXML private TextField usernameField;
@@ -15,23 +18,65 @@ public class MessengerController {
     @FXML private Button connectButton;
     @FXML private Button sendButton;
     @FXML private Button disconnectButton;
+    @FXML private Label userNameLabel;
+    @FXML private ImageView userAvatarView;
 
     private Socket socket;
     private BufferedReader in;
     private PrintWriter out;
-    private String username;
+    private User currentUser;
 
     @FXML
     public void initialize() {
         sendButton.setDisable(true);
         disconnectButton.setDisable(true);
         messageField.setDisable(true);
+
+        // Загружаем последнего зарегистрированного пользователя
+        loadCurrentUser();
+    }
+
+    // Метод для установки текущего пользователя (вызывается из RegisterController и AppManager)
+    public void setCurrentUser(User user) {
+        this.currentUser = user;
+        updateUserInfo();
+    }
+
+    private void loadCurrentUser() {
+        // Пытаемся загрузить из UserStorage
+        currentUser = UserStorage.getCurrentUser();
+        if (currentUser != null) {
+            updateUserInfo();
+        }
+    }
+
+    private void updateUserInfo() {
+        if (currentUser != null && userNameLabel != null) {
+            userNameLabel.setText(currentUser.getFullName());
+
+            // Устанавливаем аватар, если есть
+            if (currentUser.getAvatarBase64() != null && !currentUser.getAvatarBase64().isEmpty()) {
+                try {
+                    byte[] imageBytes = Base64.getDecoder().decode(currentUser.getAvatarBase64());
+                    Image image = new Image(new ByteArrayInputStream(imageBytes));
+                    userAvatarView.setImage(image);
+                } catch (Exception e) {
+                    System.err.println("Ошибка загрузки аватара: " + e.getMessage());
+                }
+            }
+
+            // Заполняем поле имени пользователя
+            if (usernameField != null) {
+                usernameField.setText(currentUser.getNick());
+            }
+        }
     }
 
     @FXML
     public void connectToServer() {
         try {
-            username = usernameField.getText().trim();
+            String username = currentUser != null ? currentUser.getNick() : usernameField.getText().trim();
+
             if (username.isEmpty()) {
                 showAlert("Ошибка", "Введите имя пользователя");
                 return;
@@ -48,7 +93,7 @@ public class MessengerController {
             messageReader.start();
 
             connectButton.setDisable(true);
-            usernameField.setDisable(true);
+            if (usernameField != null) usernameField.setDisable(true);
             sendButton.setDisable(false);
             disconnectButton.setDisable(false);
             messageField.setDisable(false);
@@ -80,7 +125,10 @@ public class MessengerController {
             }
 
             connectButton.setDisable(false);
-            usernameField.setDisable(false);
+            if (usernameField != null) {
+                usernameField.setDisable(false);
+                usernameField.clear();
+            }
             sendButton.setDisable(true);
             disconnectButton.setDisable(true);
             messageField.setDisable(true);
@@ -106,7 +154,7 @@ public class MessengerController {
             }
         } catch (IOException e) {
             Platform.runLater(() -> {
-                if (!socket.isClosed()) {
+                if (socket != null && !socket.isClosed()) {
                     appendMessage("Система", "Соединение с сервером потеряно");
                     disconnectFromServer();
                 }

@@ -1,18 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 
 <VBox xmlns="http://javafx.com/javafx"
       xmlns:fx="http://javafx.com/fxml"
       fx:controller="com.example.messanger_oop.HelloController"
       prefHeight="500.0"
-      prefWidth="300.0">
+      prefWidth="300.0"
+      spacing="10.0">
 
     <padding>
         <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
     </padding>
 
+    <!-- Кнопка профиля -->
+    <Button text="Мой профиль" onAction="#handleProfileButton"
+            style="-fx-font-size: 14px; -fx-padding: 5;" />
+
+    <!-- Список чатов -->
+    <Label text="Мои чаты:" style="-fx-font-weight: bold;" />
     <ListView fx:id="Chat_list"
               VBox.vgrow="ALWAYS"/>
 

@@ -20,8 +20,8 @@ public class HelloController {
                 if (empty || chat == null) {
                     setText(null);
                 } else {
-                    // Простое отображение
-                    setText("Чат #" + chat.getId());
+                    // Отображаем название чата или список участников
+                    setText(chat.getChatName());
                 }
             }
         });
@@ -43,5 +43,12 @@ public class HelloController {
         if (Chat_list != null && repo != null) {
             Chat_list.setItems(repo.getChats());
         }
+    }
+
+    // ДОБАВЛЯЕМ ЭТОТ МЕТОД
+    @FXML
+    private void handleProfileButton() {
+        System.out.println("Переход к профилю...");
+        AppManager.getInstance().switchToProfileScene();
     }
 }

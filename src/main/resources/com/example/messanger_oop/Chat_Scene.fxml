@@ -27,8 +27,7 @@
         <TextArea fx:id="messageTextArea"
                   HBox.hgrow="ALWAYS"
                   prefRowCount="3"
-                  wrapText="true"
-                  onKeyPressed="#handleKeyPressed"/>
+                  wrapText="true"/>
 
         <Button fx:id="sendButton"
                 text="Отправить"
