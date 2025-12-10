@@ -3,32 +3,74 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.Color?>
+<?import javafx.scene.text.Font?>
 
-<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.messanger_oop.MessengerController" spacing="10" style="-fx-padding: 10;">
-    <Label text="Мессенджер" style="-fx-font-size: 18; -fx-font-weight: bold;"/>
+<VBox xmlns:fx="http://javafx.com/fxml" fx:controller="com.example.messanger_oop.MessengerController"
+      spacing="10" style="-fx-padding: 15; -fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);">
 
-    <HBox spacing="10">
-        <Label text="Имя пользователя:"/>
-        <TextField fx:id="usernameField" promptText="Введите ваше имя"/>
-        <Button fx:id="connectButton" text="Подключиться" onAction="#connectToServer"/>
+    <!-- Заголовок -->
+    <Label text="📱 Мессенджер"
+           style="-fx-font-size: 24; -fx-font-weight: bold; -fx-text-fill: white; -fx-padding: 0 0 10 0;"/>
+
+    <!-- Панель подключения -->
+    <HBox spacing="10" style="-fx-padding: 15; -fx-background-color: rgba(255,255,255,0.9); -fx-background-radius: 10;">
+        <Label text="Имя пользователя:"
+               style="-fx-font-weight: bold; -fx-text-fill: #333;"/>
+        <TextField fx:id="usernameField"
+                   promptText="Введите ваше имя"
+                   style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-padding: 8;"/>
+        <Button fx:id="connectButton"
+                text="✅ Подключиться"
+                onAction="#connectToServer"
+                style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 5;"/>
     </HBox>
 
-    <SplitPane dividerPositions="0.7">
-        <VBox>
-            <Label text="Сообщения:"/>
-            <TextArea fx:id="messagesArea" editable="false" VBox.vgrow="ALWAYS"/>
+    <!-- Основная область -->
+    <SplitPane dividerPositions="0.7" style="-fx-background-color: transparent;">
+        <VBox spacing="10">
+            <!-- Заголовок сообщений -->
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="💬 Сообщения:"
+                       style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            </HBox>
 
-            <HBox spacing="5">
-                <TextField fx:id="messageField" promptText="Введите сообщение..." HBox.hgrow="ALWAYS" onAction="#sendMessage"/>
-                <Button fx:id="sendButton" text="Отправить" onAction="#sendMessage"/>
+            <!-- Область сообщений -->
+            <TextArea fx:id="messagesArea"
+                      editable="false"
+                      VBox.vgrow="ALWAYS"
+                      style="-fx-control-inner-background: white; -fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 10; -fx-font-family: 'Arial'; -fx-font-size: 14;"/>
+
+            <!-- Панель отправки -->
+            <HBox spacing="5" style="-fx-padding: 10; -fx-background-color: rgba(255,255,255,0.9); -fx-background-radius: 10;">
+                <TextField fx:id="messageField"
+                           promptText="Введите сообщение..."
+                           HBox.hgrow="ALWAYS"
+                           style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 5; -fx-padding: 10;"/>
+                <Button fx:id="sendButton"
+                        text="🚀 Отправить"
+                        onAction="#sendMessage"
+                        style="-fx-background-color: linear-gradient(to right, #00b09b, #96c93d); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 5;"/>
             </HBox>
         </VBox>
 
-        <VBox>
-            <Label text="Подключенные пользователи:"/>
-            <ListView fx:id="usersList" VBox.vgrow="ALWAYS"/>
+        <VBox spacing="10">
+            <!-- Заголовок пользователей -->
+            <HBox spacing="5" alignment="CENTER_LEFT">
+                <Label text="👥 Подключенные пользователи:"
+                       style="-fx-font-size: 16; -fx-font-weight: bold; -fx-text-fill: white;"/>
+            </HBox>
+
+            <!-- Список пользователей -->
+            <ListView fx:id="usersList"
+                      VBox.vgrow="ALWAYS"
+                      style="-fx-background-color: white; -fx-border-color: #ddd; -fx-border-radius: 10; -fx-control-inner-background: white;"/>
         </VBox>
     </SplitPane>
 
-    <Button fx:id="disconnectButton" text="Отключиться" onAction="#disconnectFromServer"/>
+    <!-- Кнопка отключения -->
+    <Button fx:id="disconnectButton"
+            text="🔴 Отключиться"
+            onAction="#disconnectFromServer"
+            style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10; -fx-background-radius: 5; -fx-font-size: 14;"/>
 </VBox>

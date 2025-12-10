@@ -157,6 +157,61 @@ public class Server {
                 return;
             }
 
+            // Добавляем обработку редактирования сообщений
+            if (trimmed.startsWith("/edit_message ")) {
+                String[] parts = trimmed.split(" ", 4);
+                if (parts.length == 4) {
+                    try {
+                        int chatId = Integer.parseInt(parts[1]);
+                        int messageIndex = Integer.parseInt(parts[2]);
+                        String newContent = parts[3];
+
+                        System.out.println("\n=== РЕДАКТИРОВАНИЕ СООБЩЕНИЯ ===");
+                        System.out.println("   Пользователь: " + username);
+                        System.out.println("   Чат ID: " + chatId);
+                        System.out.println("   Индекс сообщения: " + messageIndex);
+                        System.out.println("   Новый текст: " + newContent);
+
+                        Chat chat = chatManager.getChat(chatId);
+                        if (chat != null && messageIndex >= 0 && messageIndex < chat.getMessages().size()) {
+                            Message message = chat.getMessages().get(messageIndex);
+
+                            // Проверяем, что пользователь имеет право редактировать это сообщение
+                            if (message.getSender() != null &&
+                                    username.equals(message.getSender().getNick())) {
+
+                                message.setContent(newContent);
+                                message.setEdited(true);
+                                chatManager.saveChat(chat);
+
+                                // Уведомляем всех участников чата
+                                String notification = String.format(
+                                        "[Сервер]: Пользователь %s отредактировал(а) сообщение в чате '%s'",
+                                        username, chat.getChatName());
+
+                                for (User participant : chat.getUsers()) {
+                                    ClientHandler participantHandler = connectedClients.get(participant.getNick());
+                                    if (participantHandler != null) {
+                                        participantHandler.sendMessage(notification);
+                                        // Отправляем обновленный чат всем участникам
+                                        sendFullChatInfo(chat, participantHandler);
+                                    }
+                                }
+
+                                handler.sendMessage("[Сервер]: Сообщение успешно отредактировано");
+                            } else {
+                                handler.sendMessage("[Сервер]: Вы не можете редактировать это сообщение");
+                            }
+                        } else {
+                            handler.sendMessage("[Сервер]: Сообщение не найдено");
+                        }
+                    } catch (NumberFormatException e) {
+                        handler.sendMessage("[Сервер]: Неверный формат команды");
+                    }
+                }
+                return;
+            }
+
             if (trimmed.startsWith("/chat ")) {
                 String rest = trimmed.substring("/chat ".length()).trim();
                 int spaceIdx = rest.indexOf(' ');
@@ -169,7 +224,10 @@ public class Server {
                     Message message = new Message(userManager.getUser(username), msg, new Date());
                     chatManager.addMessageToChat(chatId, message);
 
-                    String broadcastMsg = "[" + chat.getChatName() + "] " + username + ": " + msg;
+                    // Исправляем формат сообщения для корректного парсинга уведомлений
+                    String broadcastMsg = String.format("[%s] %s: %s", chat.getChatName(), username, msg);
+                    System.out.println("Отправка сообщения в чат: " + broadcastMsg);
+
                     for (User participant : chat.getUsers()) {
                         ClientHandler participantHandler = connectedClients.get(participant.getNick());
                         if (participantHandler != null) {
@@ -182,8 +240,10 @@ public class Server {
                 return;
             }
 
-            String globalMsg = username + ": " + trimmed;
-            broadcast(globalMsg);
+            // Обработка обычных сообщений в общий чат с правильным форматом для уведомлений
+            String broadcastMsg = String.format("[Общий чат] %s: %s", username, trimmed);
+            System.out.println("Отправка сообщения в общий чат: " + broadcastMsg);
+            broadcast(broadcastMsg);
             chatManager.addMessage("global", username + ": " + trimmed);
 
         } catch (Exception e) {
@@ -208,11 +268,14 @@ public class Server {
                         message.getSender().getNick() : "unknown";
                 String timestamp = message.getTimestamp() != null ?
                         String.valueOf(message.getTimestamp().getTime()) : "0";
+                String editedFlag = message.isEdited() ? "1" : "0";
                 messages.append(senderNick)
                         .append("|")
                         .append(message.getContent())
                         .append("|")
-                        .append(timestamp);
+                        .append(timestamp)
+                        .append("|")
+                        .append(editedFlag);
             }
 
             String fullInfo = "CHAT_FULL:" +

@@ -4,46 +4,112 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.image.*?>
+<?import javafx.scene.shape.Circle?>
 
-<VBox alignment="CENTER" spacing="20.0" xmlns="http://javafx.com/javafx/17.0.12"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.messanger_oop.ProfileController">
+<ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;"
+            xmlns="http://javafx.com/javafx/17.0.12"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.messanger_oop.ProfileController">
 
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
+    <VBox alignment="CENTER" spacing="25.0"
+          prefHeight="600" prefWidth="450"
+          style="-fx-background-color: linear-gradient(to bottom, #f8f9ff, #eef1ff);">
 
-    <!-- Аватар -->
-    <ImageView fx:id="avatarImageView" fitWidth="100" fitHeight="100">
-        <image>
-            <Image url="@default-avatar.png" />
-        </image>
-    </ImageView>
+        <padding>
+            <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+        </padding>
 
-    <!-- Информация о пользователе -->
-    <GridPane hgap="10" vgap="10">
-        <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="100" prefWidth="100" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="200" prefWidth="200" />
-        </columnConstraints>
+        <!-- Заголовок -->
+        <Label text="👤 Мой профиль"
+               style="-fx-font-size: 28; -fx-font-weight: bold; -fx-text-fill: linear-gradient(to right, #667eea, #764ba2);"/>
 
-        <Label text="Имя:" GridPane.columnIndex="0" GridPane.rowIndex="0"
-               style="-fx-font-weight: bold;" />
-        <Label fx:id="firstNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+        <!-- Аватар с обводкой -->
+        <StackPane>
+            <Circle radius="55" fill="white" stroke="#667eea" strokeWidth="3"/>
+            <ImageView fx:id="avatarImageView" fitWidth="100" fitHeight="100">
+                <clip>
+                    <Circle centerX="50" centerY="50" radius="50"/>
+                </clip>
+                <image>
+                    <Image url="@default-avatar.png" />
+                </image>
+            </ImageView>
+        </StackPane>
 
-        <Label text="Фамилия:" GridPane.columnIndex="0" GridPane.rowIndex="1"
-               style="-fx-font-weight: bold;" />
-        <Label fx:id="lastNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <!-- Информация о пользователе в карточке -->
+        <VBox spacing="15" style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 5);"
+              prefWidth="350">
 
-        <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2"
-               style="-fx-font-weight: bold;" />
-        <Label fx:id="emailLabel" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+            <GridPane hgap="15" vgap="12">
+                <columnConstraints>
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="80" prefWidth="80" />
+                    <ColumnConstraints hgrow="SOMETIMES" minWidth="200" prefWidth="200" />
+                </columnConstraints>
 
-        <Label text="Логин:" GridPane.columnIndex="0" GridPane.rowIndex="3"
-               style="-fx-font-weight: bold;" />
-        <Label fx:id="nicknameLabel" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-    </GridPane>
+                <Label text="Имя:" GridPane.columnIndex="0" GridPane.rowIndex="0"
+                       style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
+                <Label fx:id="firstNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="0"
+                       style="-fx-text-fill: #333; -fx-font-size: 14;"/>
 
-    <!-- Кнопка назад -->
-    <Button text="Назад к чатам" onAction="#handleBackToChats" />
-</VBox>
+                <Label text="Фамилия:" GridPane.columnIndex="0" GridPane.rowIndex="1"
+                       style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
+                <Label fx:id="lastNameLabel" GridPane.columnIndex="1" GridPane.rowIndex="1"
+                       style="-fx-text-fill: #333; -fx-font-size: 14;"/>
+
+                <Label text="Email:" GridPane.columnIndex="0" GridPane.rowIndex="2"
+                       style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
+                <Label fx:id="emailLabel" GridPane.columnIndex="1" GridPane.rowIndex="2"
+                       style="-fx-text-fill: #333; -fx-font-size: 14;"/>
+
+                <Label text="Логин:" GridPane.columnIndex="0" GridPane.rowIndex="3"
+                       style="-fx-font-weight: bold; -fx-text-fill: #555;"/>
+                <Label fx:id="nicknameLabel" GridPane.columnIndex="1" GridPane.rowIndex="3"
+                       style="-fx-text-fill: #333; -fx-font-size: 14;"/>
+            </GridPane>
+        </VBox>
+
+        <!-- Кнопка смены пароля -->
+        <Button fx:id="changePasswordButton" text="Изменить пароль"
+                style="-fx-background-color: linear-gradient(to right, #ff8a00, #da1b60); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 12 30; -fx-background-radius: 25; -fx-font-size: 14;"
+                prefWidth="200"/>
+
+        <!-- Панель смены пароля -->
+        <VBox fx:id="changePasswordPanel" spacing="15" alignment="CENTER"
+              style="-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-radius: 15; -fx-padding: 20; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 5);"
+              prefWidth="350" visible="false" managed="false">
+
+            <Label text="🔒 Смена пароля"
+                   style="-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: #333;"/>
+
+            <VBox spacing="8" prefWidth="280">
+                <Label text="Текущий пароль:" style="-fx-text-fill: #555; -fx-font-size: 13;"/>
+                <PasswordField fx:id="currentPasswordField" prefWidth="280"
+                               style="-fx-background-color: #f8f9fa; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 10;"/>
+
+                <Label text="Новый пароль:" style="-fx-text-fill: #555; -fx-font-size: 13;"/>
+                <PasswordField fx:id="newPasswordField" prefWidth="280"
+                               style="-fx-background-color: #f8f9fa; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 10;"/>
+
+                <Label text="Подтвердите пароль:" style="-fx-text-fill: #555; -fx-font-size: 13;"/>
+                <PasswordField fx:id="confirmPasswordField" prefWidth="280"
+                               style="-fx-background-color: #f8f9fa; -fx-border-color: #ddd; -fx-border-radius: 8; -fx-padding: 10;"/>
+            </VBox>
+
+            <Label fx:id="passwordStatusLabel" prefHeight="25"
+                   style="-fx-font-size: 13; -fx-text-fill: #666;"/>
+
+            <HBox spacing="15">
+                <Button fx:id="savePasswordButton" text="Сохранить"
+                        style="-fx-background-color: linear-gradient(to right, #00b09b, #96c93d); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20;"/>
+
+                <Button fx:id="cancelPasswordButton" text="Отмена"
+                        style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20;"/>
+            </HBox>
+        </VBox>
+
+        <!-- Кнопка назад -->
+        <Button text="← Назад к чатам" onAction="#handleBackToChats"
+                style="-fx-background-color: transparent; -fx-text-fill: #667eea; -fx-font-weight: bold; -fx-border-color: #667eea; -fx-border-radius: 20; -fx-border-width: 2; -fx-padding: 10 40;"
+                prefWidth="200"/>
+    </VBox>
+</ScrollPane>

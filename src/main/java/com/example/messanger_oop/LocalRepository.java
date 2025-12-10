@@ -5,6 +5,9 @@ import javafx.collections.ObservableList;
 import java.io.*;
 import java.net.*;
 import java.util.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 public class LocalRepository implements Repository {
     private ObservableList<Message> Messages = FXCollections.observableArrayList();
@@ -122,15 +125,27 @@ public class LocalRepository implements Repository {
                         continue;
                     }
 
-                    if (line.contains(": ") && !line.startsWith("[")) {
-                        String[] parts = line.split(": ", 2);
-                        if (parts.length == 2) {
-                            String sender = parts[0];
-                            String content = parts[1];
-                            Message message = new Message(new User(sender), content, new Date());
-                            Messages.add(message);
+                    // Обработка сообщений из чатов для уведомлений
+                    if (line.startsWith("[") && line.contains("]: ")) {
+                        // Формат: "[НазваниеЧата] Отправитель: текст"
+                        int bracketEnd = line.indexOf(']');
+                        if (bracketEnd > 0) {
+                            String chatName = line.substring(1, bracketEnd);
+                            String rest = line.substring(bracketEnd + 2); // "]: " = 3 символа
+
+                            int colonIndex = rest.indexOf(':');
+                            if (colonIndex > 0) {
+                                String sender = rest.substring(0, colonIndex).trim();
+                                String content = rest.substring(colonIndex + 1).trim();
+
+                                // Показываем уведомление для сообщения
+                                showNotificationForMessage(chatName, sender, content);
+                            }
                         }
                     }
+
+                    // Добавляем сообщение в общий список
+                    Messages.add(new Message(new User("System"), line, new Date()));
                 }
             } catch (IOException e) {
                 System.err.println("Server reader stopped: " + e.getMessage());
@@ -142,6 +157,45 @@ public class LocalRepository implements Repository {
         serverReader.start();
     }
 
+    private void showNotificationForMessage(String chatName, String sender, String content) {
+        System.out.println("\n🔔 НОВОЕ СООБЩЕНИЕ ДЛЯ УВЕДОМЛЕНИЯ:");
+        System.out.println("   Чат: " + chatName);
+        System.out.println("   Отправитель: " + sender);
+        System.out.println("   Сообщение: " + content);
+
+        // Проверяем, что сообщение не от текущего пользователя
+        if (currentUser != null && !sender.equals(currentUser.getNick())) {
+            // Получаем текущий чат из AppManager
+            AppManager appManager = AppManager.getInstance();
+            Chat currentChat = appManager.getCurrentChat();
+
+            // Показываем уведомление, если:
+            // 1. Приложение не активно
+            // 2. ИЛИ текущий чат не совпадает с чатом уведомления
+            if (!appManager.isAppActive() ||
+                    (currentChat == null || !currentChat.getChatName().equals(chatName))) {
+
+                String notificationTitle = "Новое сообщение в чате";
+                String notificationMessage = String.format("%s: %s", sender, content);
+
+                appManager.showNotification(notificationTitle,
+                        String.format("Чат: %s\nОт: %s\n%s", chatName, sender, content));
+            }
+        }
+    }
+
+    public void saveChatFile(Chat chat, File sourceFile) throws IOException {
+        String chatFilesDir = "chat_files/chat_" + chat.getId();
+        File chatDir = new File(chatFilesDir);
+        if (!chatDir.exists()) {
+            chatDir.mkdirs();
+        }
+
+        String fileName = System.currentTimeMillis() + "_" + sourceFile.getName();
+        String destPath = chatFilesDir + "/" + fileName;
+        Files.copy(sourceFile.toPath(), Paths.get(destPath), StandardCopyOption.REPLACE_EXISTING);
+    }
+
     private void requestFullChatInfo(List<Chat> chatList) {
         if (out != null && currentUser != null) {
             System.out.println("Requesting full info for " + chatList.size() + " chats");
@@ -150,6 +204,21 @@ public class LocalRepository implements Repository {
                 System.out.println("Requested chat ID: " + chat.getId());
             }
         }
+    }
+
+    private List<User> parseParticipants(String participantsStr) {
+        List<User> participants = new ArrayList<>();
+        if (participantsStr != null && !participantsStr.isEmpty() && !participantsStr.equals("null")) {
+            String[] nicknames = participantsStr.split(",");
+            for (String nickname : nicknames) {
+                String trimmed = nickname.trim();
+                if (!trimmed.isEmpty()) {
+                    User user = new User(trimmed);
+                    participants.add(user);
+                }
+            }
+        }
+        return participants;
     }
 
     private void processFullChatInfo(String line) {
@@ -183,36 +252,27 @@ public class LocalRepository implements Repository {
         }
     }
 
-    private List<User> parseParticipants(String participantsStr) {
-        List<User> participants = new ArrayList<>();
-        if (participantsStr != null && !participantsStr.isEmpty() && !participantsStr.equals("null")) {
-            String[] nicknames = participantsStr.split(",");
-            for (String nickname : nicknames) {
-                String trimmed = nickname.trim();
-                if (!trimmed.isEmpty()) {
-                    User user = new User(trimmed);
-                    participants.add(user);
-                }
-            }
-        }
-        return participants;
-    }
-
     private void parseMessages(String messagesStr, Chat chat) {
         if (messagesStr != null && !messagesStr.isEmpty() && !messagesStr.equals("null")) {
             String[] messageParts = messagesStr.split(";");
             for (String messagePart : messageParts) {
                 if (!messagePart.trim().isEmpty()) {
-                    String[] msgData = messagePart.split("\\|", 3);
-                    if (msgData.length == 3) {
+                    String[] msgData = messagePart.split("\\|", 4);
+                    if (msgData.length >= 3) {
                         String senderNick = msgData[0];
                         String content = msgData[1];
                         String timestampStr = msgData[2];
+                        boolean edited = false;
+
+                        if (msgData.length >= 4) {
+                            edited = "1".equals(msgData[3]);
+                        }
 
                         try {
                             User sender = new User(senderNick);
                             Date timestamp = new Date(Long.parseLong(timestampStr));
                             Message message = new Message(sender, content, timestamp);
+                            message.setEdited(edited);
                             chat.send_message(message);
                         } catch (NumberFormatException e) {
                             System.err.println("Timestamp parsing error: " + timestampStr);
@@ -388,12 +448,53 @@ public class LocalRepository implements Repository {
                             maxId = fileId;
                         }
                     } catch (NumberFormatException e) {
+                        // Игнорируем ошибки парсинга
                     }
                 }
             }
         }
 
         return maxId + 1;
+    }
+
+    @Override
+    public void updateMessage(Chat chat, int messageIndex, Message updatedMessage) {
+        if (chat == null) {
+            System.err.println("Chat is null in updateMessage");
+            return;
+        }
+
+        List<Message> messages = chat.getMessages();
+        if (messages == null || messageIndex < 0 || messageIndex >= messages.size()) {
+            System.err.println("Invalid message index: " + messageIndex);
+            return;
+        }
+
+        System.out.println("\n=== ОБНОВЛЕНИЕ СООБЩЕНИЯ ===");
+        System.out.println("   Чат: " + chat.getChatName() + " (ID: " + chat.getId() + ")");
+        System.out.println("   Индекс сообщения: " + messageIndex);
+        System.out.println("   Отправитель: " + (updatedMessage.getSender() != null ? updatedMessage.getSender().getNick() : "null"));
+        System.out.println("   Новый текст: " + updatedMessage.getContent());
+
+        // Обновляем сообщение в чате
+        messages.set(messageIndex, updatedMessage);
+
+        // Сохраняем изменения локально
+        saveChatLocally(chat);
+
+        // Отправляем на сервер, если подключены
+        if (connectedToServer && out != null) {
+            try {
+                String command = "/edit_message " + chat.getId() + " " +
+                        messageIndex + " " + updatedMessage.getContent();
+                out.println(command);
+                System.out.println("📡 Отправлено на сервер: " + command);
+            } catch (Exception e) {
+                System.err.println("Ошибка отправки редактирования на сервер: " + e.getMessage());
+            }
+        }
+
+        System.out.println("Сообщение успешно обновлено!");
     }
 
     @Override
@@ -416,6 +517,41 @@ public class LocalRepository implements Repository {
             }
         } else {
             System.out.println("Message saved locally");
+        }
+    }
+
+    // Добавленный метод для сохранения сообщений с файлами
+    public void saveMessage(Message message, Chat chat) {
+        if (chat == null) {
+            System.err.println("Chat is null in saveMessage");
+            return;
+        }
+
+        chat.send_message(message);
+        saveChatLocally(chat);
+
+        if (connectedToServer && out != null) {
+            try {
+                // Для сообщений с файлами отправляем специальную команду
+                if (message.hasAttachment()) {
+                    String fileCommand = String.format("/file %d \"%s\" \"%s\" \"%s\" %d \"%s\"",
+                            chat.getId(),
+                            message.getFileName(),
+                            message.getFileType(),
+                            message.getContent(),
+                            message.getFileSize(),
+                            message.getFilePath());
+                    out.println(fileCommand);
+                    System.out.println("📡 Отправлено сообщение с файлом на сервер");
+                } else {
+                    out.println("/chat " + chat.getId() + " " + message.getContent());
+                    System.out.println("📡 Отправлено текстовое сообщение на сервер");
+                }
+            } catch (Exception e) {
+                System.err.println("Ошибка отправки на сервер: " + e.getMessage());
+            }
+        } else {
+            System.out.println("Сообщение сохранено локально");
         }
     }
 
