@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+
+<AnchorPane prefHeight="700.0" prefWidth="500.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.RegistrationController">
+    <children>
+        <!-- Заголовок -->
+        <Label layoutX="50.0" layoutY="30.0" text="Регистрация нового аккаунта">
+            <font>
+                <Font name="System Bold" size="28.0" />
+            </font>
+        </Label>
+
+        <!-- Форма регистрации -->
+        <VBox layoutX="50.0" layoutY="80.0" prefHeight="550.0" prefWidth="400.0" spacing="15.0">
+            <children>
+                <!-- Личные данные -->
+                <Label text="Личные данные:" style="-fx-font-weight: bold; -fx-font-size: 16;" />
+
+                <HBox spacing="10.0" prefWidth="400.0">
+                    <children>
+                        <VBox spacing="5.0" prefWidth="195.0">
+                            <children>
+                                <Label text="Имя:" />
+                                <TextField fx:id="firstNameField" prefHeight="35.0" prefWidth="195.0" promptText="Введите ваше имя" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" prefWidth="195.0">
+                            <children>
+                                <Label text="Фамилия:" />
+                                <TextField fx:id="lastNameField" prefHeight="35.0" prefWidth="195.0" promptText="Введите вашу фамилию" />
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
+                <Label text="Email:" />
+                <TextField fx:id="emailField" prefHeight="35.0" prefWidth="400.0" promptText="Введите ваш email" />
+
+                <!-- Учетные данные -->
+                <Label text="Учетные данные:" style="-fx-font-weight: bold; -fx-font-size: 16;" />
+
+                <Label text="Логин:" />
+                <TextField fx:id="usernameField" prefHeight="35.0" prefWidth="400.0" promptText="Придумайте логин" />
+
+                <HBox spacing="10.0" prefWidth="400.0">
+                    <children>
+                        <VBox spacing="5.0" prefWidth="195.0">
+                            <children>
+                                <Label text="Пароль:" />
+                                <PasswordField fx:id="passwordField" prefHeight="35.0" prefWidth="195.0" promptText="Придумайте пароль" />
+                            </children>
+                        </VBox>
+                        <VBox spacing="5.0" prefWidth="195.0">
+                            <children>
+                                <Label text="Подтвердите:" />
+                                <PasswordField fx:id="confirmPasswordField" prefHeight="35.0" prefWidth="195.0" promptText="Повторите пароль" />
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
+                <!-- Аватар -->
+                <Label text="Аватар профиля (необязательно):" style="-fx-font-weight: bold; -fx-font-size: 16;" />
+
+                <HBox spacing="10.0" prefWidth="400.0">
+                    <children>
+                        <ImageView fx:id="avatarImageView" fitHeight="100.0" fitWidth="100.0" pickOnBounds="true" preserveRatio="true" />
+                        <VBox spacing="5.0" prefWidth="290.0">
+                            <children>
+                                <Button fx:id="uploadAvatarButton" mnemonicParsing="false" prefHeight="35.0" prefWidth="290.0" text="Загрузить аватар" />
+                                <Label text="Рекомендуемый размер: 100x100 px" style="-fx-text-fill: #666;" />
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
+
+                <!-- Статус -->
+                <Label fx:id="statusLabel" prefHeight="25.0" prefWidth="400.0" />
+
+                <!-- Кнопки -->
+                <HBox spacing="10.0">
+                    <children>
+                        <Button fx:id="registerButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="195.0" text="Зарегистрироваться" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                        <Button fx:id="backToLoginButton" mnemonicParsing="false" prefHeight="45.0" prefWidth="195.0" text="Назад к входу" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
+                    </children>
+                </HBox>
+
+                <!-- Подсказки -->
+                <Label text="* Все поля обязательны для заполнения" style="-fx-text-fill: #666;" />
+                <Label text="* Пароль должен содержать минимум 6 символов" style="-fx-text-fill: #666;" />
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

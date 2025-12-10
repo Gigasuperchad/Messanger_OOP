@@ -29,10 +29,8 @@ public class Chat implements Serializable {
 
     private String generateChatName() {
         if (users.size() == 2) {
-            // Для приватного чата
             return "Приватный чат";
         } else {
-            // Для группового чата
             StringBuilder sb = new StringBuilder("Групповой чат: ");
             for (int i = 0; i < Math.min(users.size(), 3); i++) {
                 sb.append(users.get(i).getNick());
@@ -47,7 +45,6 @@ public class Chat implements Serializable {
         }
     }
 
-    // Геттеры
     public int getId() {
         return id;
     }
@@ -64,7 +61,6 @@ public class Chat implements Serializable {
         return chatName;
     }
 
-    // Сеттеры
     public void setId(int id) {
         this.id = id;
     }
@@ -81,7 +77,6 @@ public class Chat implements Serializable {
         this.chatName = chatName;
     }
 
-    // Методы для работы с чатом
     public void send_message(Message message) {
         if (messages == null) {
             messages = new ArrayList<>();

@@ -1,53 +1,87 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.layout.*?>
-<?import javafx.scene.image.*?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
 
-<VBox alignment="CENTER" spacing="15.0" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.RegisterController">
-    <padding>
-        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
-    </padding>
+<AnchorPane prefHeight="650.0" prefWidth="450.0" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.LoginController">
+    <children>
+        <!-- Заголовок -->
+        <Label layoutX="60.0" layoutY="30.0" text="Вход в аккаунт">
+            <font>
+                <Font name="System Bold" size="28.0" />
+            </font>
+        </Label>
 
-    <Label text="Регистрация" style="-fx-font-size: 24px; -fx-font-weight: bold;" />
+        <!-- Форма входа -->
+        <VBox layoutX="60.0" layoutY="80.0" prefHeight="250.0" prefWidth="330.0" spacing="15.0">
+            <children>
+                <Label text="Логин:" />
+                <TextField fx:id="usernameField" prefHeight="35.0" prefWidth="330.0" promptText="Введите ваш логин" />
 
-    <StackPane>
-        <ImageView fx:id="avatarImageView" fitWidth="100" fitHeight="100">
-            <image>
-                <Image url="@default-avatar.png" />
-            </image>
-        </ImageView>
-        <Button fx:id="uploadAvatarButton" text="+" style="-fx-background-radius: 15; -fx-min-width: 30; -fx-min-height: 30;" StackPane.alignment="BOTTOM_RIGHT" />
-    </StackPane>
+                <Label text="Пароль:" />
+                <PasswordField fx:id="passwordField" prefHeight="35.0" prefWidth="330.0" promptText="Введите ваш пароль" />
 
-    <GridPane hgap="10" vgap="10">
-        <columnConstraints>
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="100" prefWidth="100" />
-            <ColumnConstraints hgrow="SOMETIMES" minWidth="200" prefWidth="200" />
-        </columnConstraints>
+                <Label fx:id="statusLabel" prefHeight="25.0" prefWidth="330.0" />
 
-        <Label text="Имя:" GridPane.columnIndex="0" GridPane.rowIndex="0" />
-        <TextField fx:id="firstNameField" GridPane.columnIndex="1" GridPane.rowIndex="0" />
+                <HBox spacing="10.0">
+                    <children>
+                        <Button fx:id="loginButton" mnemonicParsing="false" prefHeight="40.0" prefWidth="160.0" text="Войти" style="-fx-background-color: #4CAF50; -fx-text-fill: white;" />
+                        <Button fx:id="registerButton" mnemonicParsing="false" prefHeight="40.0" prefWidth="160.0" text="Регистрация" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
 
-        <Label text="Фамилия:" GridPane.columnIndex="0" GridPane.rowIndex="1" />
-        <TextField fx:id="lastNameField" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+        <!-- Информация о профиле (показывается после входа) -->
+        <Label layoutX="60.0" layoutY="360.0" text="Информация о профиле:" visible="true">
+            <font>
+                <Font name="System Bold" size="18.0" />
+            </font>
+        </Label>
 
-        <Label text="Почта:" GridPane.columnIndex="0" GridPane.rowIndex="2" />
-        <TextField fx:id="emailField" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+        <VBox layoutX="60.0" layoutY="390.0" prefHeight="180.0" prefWidth="330.0" spacing="10.0">
+            <children>
+                <HBox spacing="15.0">
+                    <children>
+                        <ImageView fx:id="avatarImageView" fitHeight="80.0" fitWidth="80.0" pickOnBounds="true" preserveRatio="true" />
+                        <VBox spacing="5.0">
+                            <children>
+                                <HBox spacing="5.0">
+                                    <children>
+                                        <Label text="Имя:" style="-fx-font-weight: bold;" />
+                                        <Label fx:id="firstNameLabel" text="" />
+                                    </children>
+                                </HBox>
+                                <HBox spacing="5.0">
+                                    <children>
+                                        <Label text="Фамилия:" style="-fx-font-weight: bold;" />
+                                        <Label fx:id="lastNameLabel" text="" />
+                                    </children>
+                                </HBox>
+                                <HBox spacing="5.0">
+                                    <children>
+                                        <Label text="Email:" style="-fx-font-weight: bold;" />
+                                        <Label fx:id="emailLabel" text="" />
+                                    </children>
+                                </HBox>
+                            </children>
+                        </VBox>
+                    </children>
+                </HBox>
 
-        <Label text="Логин:" GridPane.columnIndex="0" GridPane.rowIndex="3" />
-        <TextField fx:id="usernameField" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                <Label text="Нажмите 'Войти в мессенджер' чтобы продолжить" style="-fx-text-fill: #666;" />
+            </children>
+        </VBox>
 
-        <Label text="Пароль:" GridPane.columnIndex="0" GridPane.rowIndex="4" />
-        <PasswordField fx:id="passwordField" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-    </GridPane>
-
-    <!-- Кнопки -->
-    <HBox spacing="10" alignment="CENTER">
-        <Button fx:id="registerButton" text="Зарегистрироваться" defaultButton="true" />
-    </HBox>
-
-    <!-- Статус -->
-    <Label fx:id="statusLabel" style="-fx-text-fill: red;" />
-</VBox>
+        <!-- Подсказка -->
+        <Label layoutX="60.0" layoutY="600.0" text="Нет аккаунта? Нажмите 'Регистрация'" style="-fx-text-fill: #666;" />
+    </children>
+</AnchorPane>
