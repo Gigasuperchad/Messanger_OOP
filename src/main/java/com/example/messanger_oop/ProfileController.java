@@ -13,14 +13,14 @@ public class ProfileController {
     @FXML private Label emailLabel;
     @FXML private Label nicknameLabel;
     @FXML private ImageView avatarImageView;
+    @FXML private Button changePasswordButton;
 
-    // Добавляем поля для смены пароля
+    // Поля для смены пароля
     @FXML private VBox changePasswordPanel;
     @FXML private PasswordField currentPasswordField;
     @FXML private PasswordField newPasswordField;
     @FXML private PasswordField confirmPasswordField;
     @FXML private Label passwordStatusLabel;
-    @FXML private Button changePasswordButton;
     @FXML private Button savePasswordButton;
     @FXML private Button cancelPasswordButton;
 
@@ -34,7 +34,7 @@ public class ProfileController {
             updateProfileInfo();
         }
 
-        // Изначально скрываем панель смены пароля
+        // Скрываем панель смены пароля
         if (changePasswordPanel != null) {
             changePasswordPanel.setVisible(false);
             changePasswordPanel.setManaged(false);
@@ -175,5 +175,11 @@ public class ProfileController {
             passwordStatusLabel.setText(message);
             passwordStatusLabel.setStyle("-fx-text-fill: green;");
         }
+    }
+
+    @FXML
+    private void handleStatusButton() {
+        System.out.println("Открытие окна статуса из профиля...");
+        AppManager.getInstance().openStatusWindow();
     }
 }

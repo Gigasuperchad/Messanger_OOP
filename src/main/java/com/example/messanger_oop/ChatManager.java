@@ -64,8 +64,11 @@ public class ChatManager {
     public synchronized Chat createChat(List<User> users, String chatName) {
         System.out.println("🎯 Creating chat: " + chatName);
 
+        // Проверяем существующие приватные чаты
         if (users.size() == 2) {
-            Chat existing = findPrivateChat(users.get(0).getNick(), users.get(1).getNick());
+            String user1 = users.get(0).getNick();
+            String user2 = users.get(1).getNick();
+            Chat existing = findPrivateChat(user1, user2);
             if (existing != null) {
                 System.out.println("⚠️ Private chat already exists: " + existing.getChatName());
                 return existing;
@@ -74,8 +77,18 @@ public class ChatManager {
 
         Chat chat = new Chat(users, chatName);
         chat.setId(generateId());
+
+        // Добавляем приветственное сообщение
+        if (!users.isEmpty()) {
+            User firstUser = users.get(0);
+            Message welcomeMessage = new Message(firstUser,
+                    "Чат \"" + chatName + "\" создан! Добро пожаловать!", new Date());
+            chat.send_message(welcomeMessage);
+        }
+
         saveChat(chat);
 
+        // Регистрируем чат для всех участников
         for (User u : users) {
             userChatsMap.computeIfAbsent(u.getNick(), k -> new ArrayList<>());
             List<Integer> lst = userChatsMap.get(u.getNick());
@@ -83,7 +96,7 @@ public class ChatManager {
                 lst.add(chat.getId());
             }
             saveUserChats(u.getNick(), lst);
-            System.out.println(" Added chat " + chat.getId() + " to user " + u.getNick());
+            System.out.println(" Registered chat " + chat.getId() + " for user " + u.getNick());
         }
 
         chatsCache.put(chat.getId(), chat);
@@ -209,5 +222,40 @@ public class ChatManager {
 
     public int getTotalChatCount() {
         return chatsCache.size();
+    }
+
+    public synchronized boolean deleteChat(int chatId) {
+        System.out.println("Удаление чата ID: " + chatId);
+
+        Chat chat = chatsCache.get(chatId);
+        if (chat == null) {
+            System.out.println("Чат не найден: " + chatId);
+            return false;
+        }
+
+        // Удаляем чат из кэша
+        chatsCache.remove(chatId);
+
+        // Удаляем ссылку на чат у всех пользователей
+        for (User user : chat.getUsers()) {
+            List<Integer> userChats = userChatsMap.get(user.getNick());
+            if (userChats != null) {
+                userChats.remove(Integer.valueOf(chatId));
+                saveUserChats(user.getNick(), userChats);
+                System.out.println("Удален чат " + chatId + " у пользователя " + user.getNick());
+            }
+        }
+
+        // Удаляем файл чата
+        String filename = CHATS_DIR + "/chat_" + chatId + ".dat";
+        java.io.File file = new java.io.File(filename);
+        if (file.delete()) {
+            System.out.println("Файл чата удален: " + filename);
+        } else {
+            System.out.println("Не удалось удалить файл чата: " + filename);
+        }
+
+        System.out.println("Чат " + chat.getChatName() + " (ID: " + chatId + ") успешно удален");
+        return true;
     }
 }
