@@ -9,42 +9,120 @@ public class Message implements Serializable {
     private User sender;
     private String content;
     private Date timestamp;
+    private boolean edited;
+    private String filePath;    // Путь к файлу
+    private String fileName;    // Имя файла
+    private String fileType;    // Тип файла (image, document, etc.)
+    private long fileSize;      // Размер файла в байтах
+    private boolean hasAttachment; // Есть ли вложение
 
     public Message(User sender, String content, Date timestamp) {
         this.sender = sender;
         this.content = content;
         this.timestamp = timestamp;
+        this.edited = false;
+        this.hasAttachment = false;
+        this.filePath = null;
+        this.fileName = null;
+        this.fileType = null;
+        this.fileSize = 0;
     }
 
-    public User getSender() {
-        return sender;
-    }
-
-    public String getContent() {
-        return content != null ? content : "";
-    }
-
-    public Date getTimestamp() {
-        return timestamp;
-    }
-
-    public void setSender(User sender) {
+    // Конструктор для сообщения с файлом
+    public Message(User sender, String content, Date timestamp,
+                   String filePath, String fileName, String fileType, long fileSize) {
         this.sender = sender;
-    }
-
-    public void setContent(String content) {
         this.content = content;
+        this.timestamp = timestamp;
+        this.edited = false;
+        this.hasAttachment = true;
+        this.filePath = filePath;
+        this.fileName = fileName;
+        this.fileType = fileType;
+        this.fileSize = fileSize;
     }
 
-    public void setTimestamp(Date timestamp) {
-        this.timestamp = timestamp;
+    // Геттеры и сеттеры
+    public String getFilePath() { return filePath; }
+    public void setFilePath(String filePath) {
+        this.filePath = filePath;
+        this.hasAttachment = filePath != null;
+    }
+
+    public String getFileName() { return fileName; }
+    public void setFileName(String fileName) { this.fileName = fileName; }
+
+    public String getFileType() { return fileType; }
+    public void setFileType(String fileType) { this.fileType = fileType; }
+
+    public long getFileSize() { return fileSize; }
+    public void setFileSize(long fileSize) { this.fileSize = fileSize; }
+
+    public boolean hasAttachment() { return hasAttachment; }
+    public void setHasAttachment(boolean hasAttachment) { this.hasAttachment = hasAttachment; }
+
+    // Остальные геттеры и сеттеры остаются без изменений
+    public User getSender() { return sender; }
+    public void setSender(User sender) { this.sender = sender; }
+
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+
+    public Date getTimestamp() { return timestamp; }
+    public void setTimestamp(Date timestamp) { this.timestamp = timestamp; }
+
+    public boolean isEdited() { return edited; }
+    public void setEdited(boolean edited) { this.edited = edited; }
+
+    // Метод для форматирования размера файла
+    public String getFormattedFileSize() {
+        if (fileSize < 1024) {
+            return fileSize + " Б";
+        } else if (fileSize < 1024 * 1024) {
+            return String.format("%.1f КБ", fileSize / 1024.0);
+        } else {
+            return String.format("%.1f МБ", fileSize / (1024.0 * 1024.0));
+        }
+    }
+    public String getShortFileInfo() {
+        if (hasAttachment) {
+            if (fileType.startsWith("image/")) {
+                return "📷 Изображение: " + fileName + " (" + getFormattedFileSize() + ")";
+            } else {
+                return getFileIcon() + " " + fileName + " (" + getFormattedFileSize() + ")";
+            }
+        }
+        return "";
+    }
+    // Метод для определения иконки файла по типу
+    public String getFileIcon() {
+        if (fileType == null) return "📄";
+
+        if (fileType.startsWith("image/")) {
+            return "🖼️";
+        } else if (fileType.contains("pdf")) {
+            return "📕";
+        } else if (fileType.contains("word") || fileType.contains("document")) {
+            return "📝";
+        } else if (fileType.contains("excel") || fileType.contains("spreadsheet")) {
+            return "📊";
+        } else if (fileType.contains("zip") || fileType.contains("rar") || fileType.contains("archive")) {
+            return "📦";
+        } else if (fileType.contains("audio")) {
+            return "🎵";
+        } else if (fileType.contains("video")) {
+            return "🎬";
+        } else {
+            return "📄";
+        }
     }
 
     @Override
     public String toString() {
-        String senderName = (sender != null && sender.getNick() != null) ?
-                sender.getNick() : "Неизвестный";
-        String time = (timestamp != null) ? timestamp.toString() : "Неизвестное время";
-        return "[" + time + "] " + senderName + ": " + content;
+        if (hasAttachment) {
+            return String.format("%s [Файл: %s (%s)] %s",
+                    getFileIcon(), fileName, getFormattedFileSize(), content);
+        }
+        return content;
     }
 }

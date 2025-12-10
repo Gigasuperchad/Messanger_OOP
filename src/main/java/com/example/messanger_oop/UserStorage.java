@@ -31,16 +31,28 @@ public class UserStorage {
             }
 
             // Сохраняем как текущего пользователя
-            try (ObjectOutputStream oos = new ObjectOutputStream(
-                    new FileOutputStream(CURRENT_USER_FILE))) {
-                oos.writeObject(user);
-                System.out.println("Текущий пользователь сохранен");
-            }
+            saveCurrentUser(user);
 
             System.out.println("Сохранение завершено успешно!");
 
         } catch (IOException e) {
             System.err.println("Ошибка сохранения пользователя: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public static void saveCurrentUser(User user) {
+        System.out.println("\nСОХРАНЕНИЕ ТЕКУЩЕГО ПОЛЬЗОВАТЕЛЯ:");
+        System.out.println("   Логин: " + user.getNick());
+
+        try {
+            try (ObjectOutputStream oos = new ObjectOutputStream(
+                    new FileOutputStream(CURRENT_USER_FILE))) {
+                oos.writeObject(user);
+                System.out.println("Текущий пользователь сохранен в файл: " + CURRENT_USER_FILE);
+            }
+        } catch (IOException e) {
+            System.err.println("Ошибка сохранения текущего пользователя: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -141,6 +153,34 @@ public class UserStorage {
         }
 
         return users;
+    }
+
+    public static boolean emailExists(String email) {
+        try {
+            File storageDir = new File("users_data");
+            if (!storageDir.exists()) {
+                return false;
+            }
+
+            File[] userFiles = storageDir.listFiles((dir, name) -> name.endsWith(".dat"));
+            if (userFiles == null) {
+                return false;
+            }
+
+            for (File userFile : userFiles) {
+                try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(userFile))) {
+                    User user = (User) ois.readObject();
+                    if (user.getEmail() != null && user.getEmail().equalsIgnoreCase(email)) {
+                        return true;
+                    }
+                } catch (Exception e) {
+                    System.err.println("Ошибка чтения пользователя: " + e.getMessage());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка проверки email: " + e.getMessage());
+        }
+        return false;
     }
 
     public static void clearCurrentUser() {

@@ -11,6 +11,14 @@ public class AppManager {
     private Stage stage;
     private Repository repository;
     private User currentUser;
+    private Chat currentChat;
+    private boolean appActive = true;
+    private boolean wasFullScreen = false;
+    private double windowWidth = 450; // Сохраняем размеры окна
+    private double windowHeight = 650;
+    private double windowX = -1; // Позиция окна
+    private double windowY = -1;
+    private boolean maximized = false; // Состояние максимизации
 
     private AppManager() {
         repository = new LocalRepository();
@@ -40,15 +48,70 @@ public class AppManager {
         this.stage = stage;
         this.stage.setTitle("Мессенджер");
 
+        // Отслеживаем изменения состояния окна
+        this.stage.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            appActive = newVal;
+            System.out.println("Приложение " + (appActive ? "активно" : "не активно"));
+        });
+
+        this.stage.iconifiedProperty().addListener((obs, oldVal, newVal) -> {
+            appActive = !newVal;
+            System.out.println("Приложение " + (appActive ? "развернуто" : "свернуто"));
+        });
+
+        // Сохраняем состояние полного экрана
+        this.stage.fullScreenProperty().addListener((obs, oldVal, newVal) -> {
+            wasFullScreen = newVal;
+            System.out.println("Полный экран: " + (newVal ? "включен" : "выключен"));
+        });
+
+        // Сохраняем состояние максимизации
+        this.stage.maximizedProperty().addListener((obs, oldVal, newVal) -> {
+            maximized = newVal;
+            System.out.println("Окно " + (newVal ? "максимизировано" : "восстановлено"));
+        });
+
+        // Сохраняем размеры окна при изменении
+        this.stage.widthProperty().addListener((obs, oldVal, newVal) -> {
+            if (!stage.isFullScreen() && !stage.isMaximized()) {
+                windowWidth = newVal.doubleValue();
+            }
+        });
+
+        this.stage.heightProperty().addListener((obs, oldVal, newVal) -> {
+            if (!stage.isFullScreen() && !stage.isMaximized()) {
+                windowHeight = newVal.doubleValue();
+            }
+        });
+
+        // Сохраняем позицию окна
+        this.stage.xProperty().addListener((obs, oldVal, newVal) -> {
+            if (!stage.isFullScreen() && !stage.isMaximized()) {
+                windowX = newVal.doubleValue();
+            }
+        });
+
+        this.stage.yProperty().addListener((obs, oldVal, newVal) -> {
+            if (!stage.isFullScreen() && !stage.isMaximized()) {
+                windowY = newVal.doubleValue();
+            }
+        });
+
         loadLoginScene();
     }
 
     public void loadLoginScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Login_Scene.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root, 450, 650);
+            Scene scene = new Scene(root, windowWidth, windowHeight);
             stage.setScene(scene);
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -58,10 +121,16 @@ public class AppManager {
 
     public void loadRegistrationScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Registration_Scene.fxml"));
             Parent root = loader.load();
-            Scene scene = new Scene(root, 500, 700);
+            Scene scene = new Scene(root, windowWidth, windowHeight);
             stage.setScene(scene);
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -79,7 +148,6 @@ public class AppManager {
         if (repository instanceof LocalRepository) {
             LocalRepository localRepo = (LocalRepository) repository;
             localRepo.setCurrentUser(user);
-
             localRepo.printChatsInfo();
         }
 
@@ -96,7 +164,13 @@ public class AppManager {
         System.out.println("   Чат: " + chat.getChatName());
         System.out.println("   Сообщений: " + chat.get_message_count());
 
+        // Устанавливаем текущий чат
+        this.currentChat = chat;
+
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_Scene.fxml"));
             Parent root = loader.load();
 
@@ -107,8 +181,12 @@ public class AppManager {
                 controller.setCurrentUser(currentUser);
             }
 
-            stage.setScene(new Scene(root, 500, 600));
+            Scene scene = new Scene(root, windowWidth, windowHeight);
+            stage.setScene(scene);
             stage.setTitle("Чат: " + chat.getChatName());
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             System.err.println("Ошибка загрузки Chat_Scene.fxml: " + e.getMessage());
@@ -121,7 +199,13 @@ public class AppManager {
         System.out.println("   Текущий пользователь: " +
                 (currentUser != null ? currentUser.getNick() : "null"));
 
+        // Сбрасываем текущий чат
+        this.currentChat = null;
+
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_List_Scene.fxml"));
             Parent root = loader.load();
 
@@ -130,8 +214,12 @@ public class AppManager {
                 controller.setRepository(repository);
             }
 
-            stage.setScene(new Scene(root, 350, 500));
+            Scene scene = new Scene(root, windowWidth, windowHeight);
+            stage.setScene(scene);
             stage.setTitle("Мои чаты - " + (currentUser != null ? currentUser.getFullName() : "Неизвестный"));
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             System.err.println("Ошибка загрузки Chat_List_Scene.fxml: " + e.getMessage());
@@ -164,11 +252,18 @@ public class AppManager {
 
     public void switchToProfileScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Profile_Scene.fxml"));
             Parent root = loader.load();
 
-            stage.setScene(new Scene(root, 400, 450));
+            Scene scene = new Scene(root, windowWidth, windowHeight);
+            stage.setScene(scene);
             stage.setTitle("Мой профиль - " + currentUser.getFullName());
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -178,6 +273,9 @@ public class AppManager {
 
     public void switchToServerMessenger() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
+            saveWindowState();
+
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Messenger.fxml"));
             Parent root = loader.load();
 
@@ -186,8 +284,12 @@ public class AppManager {
                 controller.setCurrentUser(currentUser);
             }
 
-            stage.setScene(new Scene(root, 800, 600));
+            Scene scene = new Scene(root, windowWidth, windowHeight);
+            stage.setScene(scene);
             stage.setTitle("Серверный мессенджер - " + currentUser.getFullName());
+
+            // Восстанавливаем состояние окна
+            restoreWindowState();
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
@@ -197,6 +299,9 @@ public class AppManager {
 
     public void logout() {
         System.out.println("\nВЫХОД ИЗ СИСТЕМЫ...");
+
+        // Сохраняем состояние окна перед выходом
+        saveWindowState();
 
         // Отправляем команду сохранения на сервер
         if (repository instanceof LocalRepository) {
@@ -213,6 +318,7 @@ public class AppManager {
 
         UserStorage.clearCurrentUser();
         currentUser = null;
+        currentChat = null;
 
         repository = new LocalRepository();
 
@@ -226,6 +332,53 @@ public class AppManager {
         }
     }
 
+    private void saveWindowState() {
+        if (stage != null) {
+            wasFullScreen = stage.isFullScreen();
+            maximized = stage.isMaximized();
+
+            if (!stage.isFullScreen() && !stage.isMaximized()) {
+                windowWidth = stage.getWidth();
+                windowHeight = stage.getHeight();
+                windowX = stage.getX();
+                windowY = stage.getY();
+            }
+
+            System.out.println("Сохранено состояние окна:");
+            System.out.println("  Полный экран: " + wasFullScreen);
+            System.out.println("  Максимизировано: " + maximized);
+            System.out.println("  Размер: " + windowWidth + "x" + windowHeight);
+            System.out.println("  Позиция: " + windowX + ", " + windowY);
+        }
+    }
+
+    private void restoreWindowState() {
+        if (stage != null) {
+            // Восстанавливаем позицию, если она была сохранена
+            if (windowX >= 0 && windowY >= 0) {
+                stage.setX(windowX);
+                stage.setY(windowY);
+            }
+
+            // Восстанавливаем размер
+            stage.setWidth(windowWidth);
+            stage.setHeight(windowHeight);
+
+            // Восстанавливаем максимизацию
+            stage.setMaximized(maximized);
+
+            // Восстанавливаем полный экран (делаем это последним)
+            if (wasFullScreen) {
+                stage.setFullScreen(true);
+            }
+
+            System.out.println("Восстановлено состояние окна:");
+            System.out.println("  Полный экран: " + wasFullScreen);
+            System.out.println("  Максимизировано: " + maximized);
+            System.out.println("  Размер: " + windowWidth + "x" + windowHeight);
+        }
+    }
+
     public User getCurrentUser() {
         return currentUser;
     }
@@ -236,5 +389,47 @@ public class AppManager {
 
     public Stage getStage() {
         return stage;
+    }
+
+    // Новые методы для уведомлений
+    public Chat getCurrentChat() {
+        return currentChat;
+    }
+
+    public boolean isAppActive() {
+        return appActive;
+    }
+
+    public void showNotification(String title, String message) {
+        // Показываем уведомление только если приложение не активно
+        if (!appActive) {
+            System.out.println("\nСИСТЕМНОЕ УВЕДОМЛЕНИЕ:");
+            System.out.println("   Заголовок: " + title);
+            System.out.println("   Сообщение: " + message);
+
+            javafx.application.Platform.runLater(() -> {
+                try {
+                    javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                            javafx.scene.control.Alert.AlertType.INFORMATION);
+                    alert.setTitle(title);
+                    alert.setHeaderText("Новое сообщение");
+                    alert.setContentText(message);
+
+                    alert.show();
+
+                    new java.util.Timer().schedule(
+                            new java.util.TimerTask() {
+                                @Override
+                                public void run() {
+                                    javafx.application.Platform.runLater(() -> alert.close());
+                                }
+                            },
+                            3000
+                    );
+                } catch (Exception e) {
+                    System.err.println("Ошибка показа уведомления: " + e.getMessage());
+                }
+            });
+        }
     }
 }
