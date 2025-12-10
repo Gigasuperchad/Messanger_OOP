@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<ScrollPane xmlns="http://javafx.com/javafx/17.0.2-ea"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.example.messanger_oop.StatusController"
+            fitToWidth="true"
+            vbarPolicy="AS_NEEDED"
+            hbarPolicy="NEVER"
+            style="-fx-background-color: transparent; -fx-border-color: transparent;">
+
+    <VBox spacing="25"
+          style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%); -fx-padding: 35; -fx-background-radius: 25;">
+
+        <Label text="🟢 Настройка статуса"
+               style="-fx-font-size: 26; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"/>
+
+        <VBox spacing="18" style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 10);">
+            <VBox spacing="15">
+                <Label text="Выберите статус:" style="-fx-text-fill: #555; -fx-font-weight: bold; -fx-font-size: 15;"/>
+                <ComboBox fx:id="statusComboBox" prefWidth="350"
+                          style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
+            </VBox>
+
+            <VBox spacing="15">
+                <Label text="Сообщение статуса (опционально):" style="-fx-text-fill: #555; -fx-font-weight: bold; -fx-font-size: 15;"/>
+                <TextField fx:id="statusMessageField"
+                           prefWidth="350"
+                           promptText="Например: На совещании..."
+                           style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
+            </VBox>
+
+            <Label fx:id="currentStatusLabel"
+                   style="-fx-font-size: 14; -fx-text-fill: #666666; -fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 18; -fx-wrap-text: true;"/>
+
+            <HBox spacing="20" style="-fx-padding: 20 0 0 0;">
+                <Button text="Установить" fx:id="setStatusButton"
+                        style="-fx-background-color: linear-gradient(to right, #4CAF50, #8BC34A); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 14 30; -fx-background-radius: 20; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 8, 0, 0, 4);"
+                        prefWidth="200"/>
+                <Button text="❌ Отмена" fx:id="cancelButton"
+                        style="-fx-background-color: #9E9E9E; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 14 30; -fx-background-radius: 20; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(158,158,158,0.3), 8, 0, 0, 4);"
+                        prefWidth="200"/>
+            </HBox>
+        </VBox>
+
+        <Region prefHeight="25"/>
+
+    </VBox>
+</ScrollPane>

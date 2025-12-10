@@ -1,45 +1,36 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
-<?import javafx.scene.paint.LinearGradient?>
-<?import javafx.scene.paint.Stop?>
-<?import javafx.scene.paint.CycleMethod?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.messanger_oop.HelloController"
-      prefHeight="550.0"
-      prefWidth="350.0"
-      spacing="15.0"
-      style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);">
+<VBox prefHeight="650.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.HelloController">
 
     <padding>
-        <Insets top="20.0" right="20.0" bottom="20.0" left="20.0"/>
+        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
     </padding>
 
     <!-- Заголовок -->
-    <Label text="💬 Мои чаты"
-           style="-fx-font-weight: bold; -fx-font-size: 24; -fx-text-fill: white; -fx-padding: 0 0 10 0;"/>
+    <Label style="-fx-font-weight: bold; -fx-font-size: 26; -fx-text-fill: white; -fx-padding: 0 0 10 0; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);" text="💬 Мои чаты" />
 
     <!-- Список чатов -->
-    <ListView fx:id="Chat_list"
-              VBox.vgrow="ALWAYS"
-              style="-fx-background-color: white; -fx-background-radius: 15; -fx-border-radius: 15; -fx-padding: 5; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 5);"/>
+    <ListView fx:id="Chat_list" style="-fx-background-color: white; -fx-background-radius: 20; -fx-border-radius: 20; -fx-padding: 5; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 15, 0, 0, 8);" VBox.vgrow="ALWAYS" />
 
-    <!-- Кнопки действий -->
-    <HBox spacing="10.0" style="-fx-padding: 10 0;">
-        <Button mnemonicParsing="false" onAction="#handleCreateChat"
-                prefHeight="45.0" prefWidth="170.0" text="➕ Создать чат"
-                style="-fx-background-color: linear-gradient(to right, #4CAF50, #8BC34A); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14;"/>
+    <!-- Первая строка кнопок -->
+    <HBox spacing="12.0" style="-fx-padding: 10 0;">
+        <Button mnemonicParsing="false" onAction="#handleCreateChat" prefHeight="48.0" prefWidth="194.0" style="-fx-background-color: linear-gradient(to right, #4CAF50, #8BC34A); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 8, 0, 0, 4);" text="➕ Создать чат" />
 
-        <Button mnemonicParsing="false" onAction="#handleProfileButton"
-                prefHeight="45.0" prefWidth="170.0" text="👤 Мой профиль"
-                style="-fx-background-color: linear-gradient(to right, #2196F3, #03A9F4); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14;"/>
+        <Button fx:id="deleteChatButton" disable="true" mnemonicParsing="false" onAction="#handleDeleteChat" prefHeight="48.0" prefWidth="194.0" style="-fx-background-color: linear-gradient(to right, #f44336, #FF5252); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(244,67,54,0.3), 8, 0, 0, 4);" text="Удалить чат" />
     </HBox>
 
-    <!-- Кнопка выхода -->
-    <Button mnemonicParsing="false" onAction="#handleLogout"
-            prefHeight="45.0" prefWidth="350.0" text="🚪 Выйти"
-            style="-fx-background-color: linear-gradient(to right, #f44336, #FF5252); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14;" />
+    <!-- Вторая строка кнопок -->
+    <HBox spacing="12.0" style="-fx-padding: 0 0 10 0;">
+
+        <Button mnemonicParsing="false" onAction="#handleProfileButton" prefHeight="48.0" prefWidth="194.0" style="-fx-background-color: linear-gradient(to right, #2196F3, #03A9F4); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(33,150,243,0.3), 8, 0, 0, 4);" text="👤 Мой профиль" />
+    </HBox>
+
+    <!-- Третья строка кнопок -->
+    <HBox spacing="12.0">
+        <Button mnemonicParsing="false" onAction="#handleLogout" prefHeight="48.0" prefWidth="400.0" style="-fx-background-color: linear-gradient(to right, #757575, #9E9E9E); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 14; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(117,117,117,0.3), 8, 0, 0, 4);" text="🚪 Выйти" />
+    </HBox>
 </VBox>

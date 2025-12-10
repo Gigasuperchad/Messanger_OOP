@@ -1,67 +1,64 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
-<?import javafx.geometry.Insets?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.messanger_oop.ChatController"
-      prefHeight="600.0"
-      prefWidth="500.0"
-      spacing="15.0"
-      style="-fx-background-color: linear-gradient(to bottom, #eef1ff, #f8f9ff);">
+<HBox prefHeight="650.0" prefWidth="800.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #eef1ff, #f8f9ff);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.ChatController">
 
     <padding>
-        <Insets top="15.0" right="15.0" bottom="15.0" left="15.0"/>
+        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
     </padding>
 
-    <!-- Верхняя панель с кнопкой назад -->
-    <HBox spacing="10" alignment="CENTER_LEFT"
-          style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);">
-        <Button text="← Назад к списку чатов"
-                onAction="#handleBackToChatList"
-                style="-fx-background-color: transparent; -fx-text-fill: #667eea; -fx-font-weight: bold; -fx-border-color: #667eea; -fx-border-radius: 15; -fx-border-width: 2; -fx-padding: 8 20;"/>
-    </HBox>
+    <!-- Левая панель с сообщениями -->
+    <VBox prefWidth="600" spacing="15" VBox.vgrow="ALWAYS">
 
-    <!-- Список сообщений -->
-    <ListView fx:id="messageListView"
-              VBox.vgrow="ALWAYS"
-              style="-fx-background-color: white; -fx-background-radius: 15; -fx-border-color: #e0e0e0; -fx-border-radius: 15; -fx-padding: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 3);"/>
+        <!-- Верхняя панель с кнопкой назад и статусом чата -->
+        <HBox alignment="CENTER_LEFT" spacing="10" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, 2);">
 
-    <!-- Панель ввода с кнопками файлов -->
-    <VBox spacing="10"
-          style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 3);">
+            <Button onAction="#handleBackToChatList" style="-fx-background-color: transparent; -fx-text-fill: #667eea; -fx-font-weight: bold; -fx-border-color: #667eea; -fx-border-radius: 15; -fx-border-width: 2; -fx-padding: 8 15;" text="← Назад" />
 
-        <!-- Кнопки прикрепления файлов -->
-        <HBox spacing="10" alignment="CENTER_LEFT">
-            <Button fx:id="attachImageButton"
-                    text="🖼️ Изображение"
-                    style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 10;"/>
+            <Label fx:id="chatStatusLabel" style="-fx-text-fill: #666; -fx-font-size: 12px; -fx-padding: 0 10;" text="Загрузка статуса..." />
 
-            <Button fx:id="attachFileButton"
-                    text="📎 Файл"
-                    style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 10;"/>
-
-            <!-- Показать выбранный файл -->
-            <Label fx:id="selectedFileLabel"
-                   text=""
-                   style="-fx-text-fill: #666; -fx-font-size: 12; -fx-padding: 0 10;"/>
+            <Region HBox.hgrow="ALWAYS" />
         </HBox>
 
-        <!-- Поле ввода сообщения -->
-        <HBox spacing="10.0">
-            <TextArea fx:id="messageTextArea"
-                      HBox.hgrow="ALWAYS"
-                      prefRowCount="3"
-                      wrapText="true"
-                      promptText="Введите сообщение или прикрепите файл..."
-                      style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 10; -fx-padding: 10; -fx-font-family: 'Arial'; -fx-font-size: 14;"/>
+        <!-- Список сообщений -->
+        <ListView fx:id="messageListView" style="-fx-background-color: white; -fx-background-radius: 15; -fx-border-color: #e0e0e0; -fx-border-radius: 15; -fx-padding: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 3);" VBox.vgrow="ALWAYS" />
 
-            <Button fx:id="sendButton"
-                    text="✉️ Отправить"
-                    onAction="#handleSendMessage"
-                    defaultButton="true"
-                    style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 15 25; -fx-background-radius: 15; -fx-font-size: 14;"/>
-        </HBox>
+        <!-- Панель ввода с кнопками файлов -->
+        <VBox spacing="10" style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 3);">
+
+            <!-- Кнопки прикрепления файлов -->
+            <HBox alignment="CENTER_LEFT" spacing="10">
+                <Button fx:id="attachImageButton" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 10;" text="Изображение" />
+
+                <Button fx:id="attachFileButton" style="-fx-background-color: #2196F3; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 15; -fx-background-radius: 10;" text="📎 Файл" />
+
+                <!-- Показать выбранный файл -->
+                <Label fx:id="selectedFileLabel" style="-fx-text-fill: #666; -fx-font-size: 12; -fx-padding: 0 10;" text="" />
+            </HBox>
+
+            <!-- Поле ввода сообщения -->
+            <HBox spacing="10.0">
+                <TextArea fx:id="messageTextArea" prefHeight="65.0" prefRowCount="3" prefWidth="500.0" promptText="Введите сообщение или прикрепите файл... (Ctrl+двойной клик для статуса)" style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 10; -fx-padding: 10; -fx-font-family: 'Arial'; -fx-font-size: 14;" wrapText="true" HBox.hgrow="ALWAYS" />
+
+                <Button fx:id="sendButton" defaultButton="true" onAction="#handleSendMessage" prefHeight="65.0" prefWidth="210.0" style="-fx-background-color: linear-gradient(to right, #667eea, #764ba2); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 15 25; -fx-background-radius: 15; -fx-font-size: 14;" text="Отправить" />
+            </HBox>
+        </VBox>
     </VBox>
-</VBox>
+
+    <!-- Правая панель с онлайн-пользователями -->
+    <VBox prefWidth="180" spacing="10" style="-fx-background-color: white; -fx-background-radius: 15; -fx-padding: 15; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 8, 0, 0, 3);">
+
+        <Label style="-fx-font-weight: bold; -fx-font-size: 14; -fx-text-fill: #333;" text="🟢 Онлайн в чате" />
+
+        <Separator style="-fx-padding: 5 0;" />
+
+        <ListView fx:id="onlineUsersListView" style="-fx-background-color: transparent; -fx-border-color: #e0e0e0; -fx-border-radius: 8;" VBox.vgrow="ALWAYS" />
+
+        <Label style="-fx-font-size: 10; -fx-text-fill: #999; -fx-wrap-text: true;" text="Двойной клик по сообщению для редактирования" />
+
+        <Label style="-fx-font-size: 10; -fx-text-fill: #999; -fx-wrap-text: true;" text="Ctrl+двойной клик для просмотра статуса доставки" />
+    </VBox>
+</HBox>

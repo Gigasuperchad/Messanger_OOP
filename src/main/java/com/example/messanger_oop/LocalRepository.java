@@ -88,6 +88,15 @@ public class LocalRepository implements Repository {
                         System.out.println("End of chat list. Total chats: " + chatList.size());
 
                         if (!chatList.isEmpty()) {
+                            // Очищаем старые чаты и добавляем новые
+                            javafx.application.Platform.runLater(() -> {
+                                Chats.clear();
+                                Chats.addAll(chatList);
+                                chatsLoaded = true;
+                                System.out.println("Chat list updated with " + chatList.size() + " chats");
+                            });
+
+                            // Запрашиваем полную информацию о каждом чате
                             requestFullChatInfo(chatList);
                         } else {
                             javafx.application.Platform.runLater(() -> {
@@ -125,26 +134,39 @@ public class LocalRepository implements Repository {
                         continue;
                     }
 
+                    // Обработка уведомления о добавлении в чат
+                    if (line.contains("Вас добавили в чат")) {
+                        System.out.println("📨 Received chat invitation: " + line);
+                        // Запрашиваем обновленный список чатов
+                        if (out != null) {
+                            out.println("/chats");
+                        }
+                        continue;
+                    }
+
+                    // Обработка статусных сообщений
+                    if (line.startsWith("[СТАТУС]")) {
+                        processStatusMessage(line);
+                        continue;
+                    }
+
                     // Обработка сообщений из чатов для уведомлений
                     if (line.startsWith("[") && line.contains("]: ")) {
-                        // Формат: "[НазваниеЧата] Отправитель: текст"
                         int bracketEnd = line.indexOf(']');
                         if (bracketEnd > 0) {
                             String chatName = line.substring(1, bracketEnd);
-                            String rest = line.substring(bracketEnd + 2); // "]: " = 3 символа
+                            String rest = line.substring(bracketEnd + 2);
 
                             int colonIndex = rest.indexOf(':');
                             if (colonIndex > 0) {
                                 String sender = rest.substring(0, colonIndex).trim();
                                 String content = rest.substring(colonIndex + 1).trim();
 
-                                // Показываем уведомление для сообщения
                                 showNotificationForMessage(chatName, sender, content);
                             }
                         }
                     }
 
-                    // Добавляем сообщение в общий список
                     Messages.add(new Message(new User("System"), line, new Date()));
                 }
             } catch (IOException e) {
@@ -157,21 +179,35 @@ public class LocalRepository implements Repository {
         serverReader.start();
     }
 
+    private void processStatusMessage(String line) {
+        try {
+            // Формат: [СТАТУС] username: STATUS
+            String payload = line.substring("[СТАТУС]".length()).trim();
+            String[] parts = payload.split(":");
+            if (parts.length == 2) {
+                String username = parts[0].trim();
+                String statusStr = parts[1].trim();
+
+                UserStatus.Status status = UserStatus.Status.valueOf(statusStr);
+                StatusManager.getInstance().setUserStatus(username, status);
+
+                System.out.println("Статус обновлен: " + username + " -> " + status);
+            }
+        } catch (Exception e) {
+            System.err.println("Ошибка обработки статуса: " + e.getMessage());
+        }
+    }
+
     private void showNotificationForMessage(String chatName, String sender, String content) {
         System.out.println("\n🔔 НОВОЕ СООБЩЕНИЕ ДЛЯ УВЕДОМЛЕНИЯ:");
         System.out.println("   Чат: " + chatName);
         System.out.println("   Отправитель: " + sender);
         System.out.println("   Сообщение: " + content);
 
-        // Проверяем, что сообщение не от текущего пользователя
         if (currentUser != null && !sender.equals(currentUser.getNick())) {
-            // Получаем текущий чат из AppManager
             AppManager appManager = AppManager.getInstance();
             Chat currentChat = appManager.getCurrentChat();
 
-            // Показываем уведомление, если:
-            // 1. Приложение не активно
-            // 2. ИЛИ текущий чат не совпадает с чатом уведомления
             if (!appManager.isAppActive() ||
                     (currentChat == null || !currentChat.getChatName().equals(chatName))) {
 
@@ -476,13 +512,10 @@ public class LocalRepository implements Repository {
         System.out.println("   Отправитель: " + (updatedMessage.getSender() != null ? updatedMessage.getSender().getNick() : "null"));
         System.out.println("   Новый текст: " + updatedMessage.getContent());
 
-        // Обновляем сообщение в чате
         messages.set(messageIndex, updatedMessage);
 
-        // Сохраняем изменения локально
         saveChatLocally(chat);
 
-        // Отправляем на сервер, если подключены
         if (connectedToServer && out != null) {
             try {
                 String command = "/edit_message " + chat.getId() + " " +
@@ -520,7 +553,6 @@ public class LocalRepository implements Repository {
         }
     }
 
-    // Добавленный метод для сохранения сообщений с файлами
     public void saveMessage(Message message, Chat chat) {
         if (chat == null) {
             System.err.println("Chat is null in saveMessage");
@@ -532,7 +564,6 @@ public class LocalRepository implements Repository {
 
         if (connectedToServer && out != null) {
             try {
-                // Для сообщений с файлами отправляем специальную команду
                 if (message.hasAttachment()) {
                     String fileCommand = String.format("/file %d \"%s\" \"%s\" \"%s\" %d \"%s\"",
                             chat.getId(),
@@ -607,6 +638,7 @@ public class LocalRepository implements Repository {
 
         if (connectedToServer && out != null && currentUser != null) {
             try {
+                // Собираем список участников (кроме текущего пользователя)
                 StringBuilder usersStr = new StringBuilder();
                 for (User u : chat.getUsers()) {
                     if (!u.getNick().equals(currentUser.getNick())) {
@@ -620,7 +652,16 @@ public class LocalRepository implements Repository {
                     out.println(command);
                     System.out.println("📡 Sent to server: " + command);
 
-                    out.println("/chats");
+                    // Ждем немного и запрашиваем обновленный список чатов
+                    new Thread(() -> {
+                        try {
+                            Thread.sleep(1000);
+                            out.println("/chats");
+                            System.out.println("📡 Requested updated chat list from server");
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }).start();
                 }
             } catch (Exception e) {
                 System.err.println("Server send error: " + e.getMessage());
@@ -713,6 +754,106 @@ public class LocalRepository implements Repository {
             Chat chat = Chats.get(i);
             System.out.println("   " + (i + 1) + ". " + chat.getChatName() +
                     " (ID: " + chat.getId() + ", messages: " + chat.get_message_count() + ")");
+        }
+    }
+
+    @Override
+    public void deleteChat(Chat chat) {
+        if (chat == null) {
+            System.err.println("Can't delete null chat");
+            return;
+        }
+
+        System.out.println("\n=== УДАЛЕНИЕ ЧАТА В РЕПОЗИТОРИИ ===");
+        System.out.println("Чат: " + chat.getChatName() + " (ID: " + chat.getId() + ")");
+
+        // Удаляем из списка чатов
+        Chats.remove(chat);
+
+        // Удаляем локальные файлы
+        deleteChatFiles(chat);
+
+        // Обновляем список чатов пользователя
+        updateUserChatsFile(chat);
+
+        // Если подключены к серверу, отправляем команду удаления
+        if (connectedToServer && out != null && currentUser != null) {
+            try {
+                out.println("/delete_chat " + chat.getId());
+                System.out.println("📡 Отправлена команда удаления чата на сервер");
+            } catch (Exception e) {
+                System.err.println("Ошибка отправки команды удаления: " + e.getMessage());
+            }
+        }
+
+        System.out.println("Чат успешно удален из репозитория");
+    }
+
+    private void deleteChatFiles(Chat chat) {
+        try {
+            // Удаляем файл чата
+            String chatFile = "local_chats/chat_" + chat.getId() + ".dat";
+            java.io.File file = new java.io.File(chatFile);
+            if (file.exists() && file.delete()) {
+                System.out.println("Файл чата удален: " + chatFile);
+            }
+
+            // Удаляем папку с файлами чата
+            String chatFilesDir = "chat_files/chat_" + chat.getId();
+            java.io.File dir = new java.io.File(chatFilesDir);
+            if (dir.exists() && dir.isDirectory()) {
+                deleteDirectory(dir);
+                System.out.println("Папка файлов чата удалена: " + chatFilesDir);
+            }
+
+        } catch (Exception e) {
+            System.err.println("Ошибка удаления файлов чата: " + e.getMessage());
+        }
+    }
+
+    private void deleteDirectory(java.io.File dir) {
+        if (dir.isDirectory()) {
+            java.io.File[] children = dir.listFiles();
+            if (children != null) {
+                for (java.io.File child : children) {
+                    deleteDirectory(child);
+                }
+            }
+        }
+        dir.delete();
+    }
+
+    private void updateUserChatsFile(Chat deletedChat) {
+        try {
+            if (currentUser == null) return;
+
+            String userChatsFile = "local_chats/" + currentUser.getNick() + "_chats.dat";
+            java.io.File file = new java.io.File(userChatsFile);
+
+            if (file.exists()) {
+                // Читаем текущий список чатов
+                java.io.ObjectInputStream ois = new java.io.ObjectInputStream(
+                        new java.io.FileInputStream(file));
+                java.util.List<Integer> chatIds = (java.util.List<Integer>) ois.readObject();
+                ois.close();
+
+                // Удаляем ID удаленного чата
+                Integer chatIdToRemove = deletedChat.getId();
+                boolean removed = chatIds.remove(chatIdToRemove);
+                System.out.println("ID чата " + chatIdToRemove +
+                        (removed ? " удален из списка" : " не найден в списке"));
+
+                // Сохраняем обновленный список
+                java.io.ObjectOutputStream oos = new java.io.ObjectOutputStream(
+                        new java.io.FileOutputStream(file));
+                oos.writeObject(chatIds);
+                oos.close();
+
+                System.out.println("Список чатов пользователя обновлен. Осталось: " + chatIds.size());
+            }
+
+        } catch (Exception e) {
+            System.err.println("Ошибка обновления файла чатов пользователя: " + e.getMessage());
         }
     }
 }

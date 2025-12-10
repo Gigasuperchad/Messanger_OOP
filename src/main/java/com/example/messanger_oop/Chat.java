@@ -118,4 +118,28 @@ public class Chat implements Serializable {
     public String toString() {
         return chatName + " (" + get_message_count() + " сообщений)";
     }
+
+    public String getChatInfo() {
+        StringBuilder info = new StringBuilder();
+        info.append("Название: ").append(chatName).append("\n");
+        info.append("ID: ").append(id).append("\n");
+        info.append("Сообщений: ").append(get_message_count()).append("\n");
+        info.append("Участников: ").append(users.size()).append("\n");
+
+        if (users.size() == 2) {
+            info.append("Тип: Приватный чат\n");
+        } else {
+            info.append("Тип: Групповой чат\n");
+        }
+
+        return info.toString();
+    }
+
+    public List<String> getParticipantNames() {
+        List<String> names = new ArrayList<>();
+        for (User user : users) {
+            names.add(user.getFullName() + " (" + user.getNick() + ")");
+        }
+        return names;
+    }
 }
