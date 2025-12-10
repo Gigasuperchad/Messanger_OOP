@@ -20,6 +20,7 @@ public class MessengerController {
     @FXML private Button disconnectButton;
     @FXML private Label userNameLabel;
     @FXML private ImageView userAvatarView;
+    // @FXML private PasswordField passwordField;
 
     private Socket socket;
     private BufferedReader in;
@@ -32,18 +33,15 @@ public class MessengerController {
         disconnectButton.setDisable(true);
         messageField.setDisable(true);
 
-        // Загружаем последнего зарегистрированного пользователя
         loadCurrentUser();
     }
 
-    // Метод для установки текущего пользователя (вызывается из RegisterController и AppManager)
     public void setCurrentUser(User user) {
         this.currentUser = user;
         updateUserInfo();
     }
 
     private void loadCurrentUser() {
-        // Пытаемся загрузить из UserStorage
         currentUser = UserStorage.getCurrentUser();
         if (currentUser != null) {
             updateUserInfo();
@@ -54,7 +52,6 @@ public class MessengerController {
         if (currentUser != null && userNameLabel != null) {
             userNameLabel.setText(currentUser.getFullName());
 
-            // Устанавливаем аватар, если есть
             if (currentUser.getAvatarBase64() != null && !currentUser.getAvatarBase64().isEmpty()) {
                 try {
                     byte[] imageBytes = Base64.getDecoder().decode(currentUser.getAvatarBase64());
@@ -65,7 +62,6 @@ public class MessengerController {
                 }
             }
 
-            // Заполняем поле имени пользователя
             if (usernameField != null) {
                 usernameField.setText(currentUser.getNick());
             }
@@ -77,6 +73,16 @@ public class MessengerController {
         try {
             String username = currentUser != null ? currentUser.getNick() : usernameField.getText().trim();
 
+            String password = null;
+            if (currentUser != null && currentUser.getPassword() != null) {
+                password = currentUser.getPassword();
+            } else {
+                // Если вы хотите вводить пароль вручную через UI — добавьте PasswordField и используйте:
+                // password = passwordField.getText().trim();
+                // На текущий момент попробуем взять из usernameField (как запасной вариант) — лучше добавить PasswordField.
+                password = ""; // явное пустое, чтобы не отправлять строку-заглушку
+            }
+
             if (username.isEmpty()) {
                 showAlert("Ошибка", "Введите имя пользователя");
                 return;
@@ -86,7 +92,38 @@ public class MessengerController {
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 
-            out.println(username);
+            String serverResponse;
+            while ((serverResponse = in.readLine()) != null) {
+                appendMessage("Сервер", serverResponse);
+
+                if (serverResponse.toLowerCase().contains("введите номер")) {
+                    out.println("2");
+                    continue;
+                }
+
+                if (serverResponse.toLowerCase().contains("введите логин")) {
+                    out.println(username);
+                    continue;
+                }
+
+                if (serverResponse.toLowerCase().contains("введите пароль")) {
+                    out.println(password != null ? password : "");
+                    continue;
+                }
+
+                if (serverResponse.toLowerCase().contains("вход выполнен") ||
+                        serverResponse.toLowerCase().contains("добро пожаловать")) {
+                    break;
+                }
+
+                if (serverResponse.toLowerCase().contains("неверный логин")
+                        || serverResponse.toLowerCase().contains("неверный пароль")
+                        || serverResponse.toLowerCase().contains("аутентификация не удалась")) {
+                    showAlert("Ошибка", "Неверный логин или пароль");
+                    disconnectFromServer();
+                    return;
+                }
+            }
 
             Thread messageReader = new Thread(this::readMessages);
             messageReader.setDaemon(true);
@@ -98,10 +135,11 @@ public class MessengerController {
             disconnectButton.setDisable(false);
             messageField.setDisable(false);
 
-            appendMessage("Система", "Подключено к серверу");
+            appendMessage("Система", "Успешное подключение к серверу");
 
         } catch (IOException e) {
             showAlert("Ошибка подключения", "Не удалось подключиться к серверу: " + e.getMessage());
+            cleanupSocket();
         }
     }
 
@@ -109,7 +147,12 @@ public class MessengerController {
     public void sendMessage() {
         String message = messageField.getText().trim();
         if (!message.isEmpty() && out != null) {
-            out.println(message);
+            if (message.startsWith("/")) {
+                out.println(message);
+            } else {
+                out.println(message);
+                appendMessage("Вы", message);
+            }
             messageField.clear();
         }
     }
@@ -120,9 +163,7 @@ public class MessengerController {
             if (out != null) {
                 out.println("/quit");
             }
-            if (socket != null) {
-                socket.close();
-            }
+            cleanupSocket();
 
             connectButton.setDisable(false);
             if (usernameField != null) {
@@ -134,8 +175,9 @@ public class MessengerController {
             messageField.setDisable(true);
 
             appendMessage("Система", "Отключено от сервера");
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Ошибка при отключении: " + e.getMessage());
+            cleanupSocket();
         }
     }
 
@@ -182,10 +224,25 @@ public class MessengerController {
     }
 
     private void showAlert(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
+        Platform.runLater(() -> {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
+            alert.showAndWait();
+        });
+    }
+
+    private void cleanupSocket() {
+        try {
+            if (in != null) in.close();
+        } catch (IOException ignored) {}
+        if (out != null) out.close();
+        try {
+            if (socket != null && !socket.isClosed()) socket.close();
+        } catch (IOException ignored) {}
+        in = null;
+        out = null;
+        socket = null;
     }
 }

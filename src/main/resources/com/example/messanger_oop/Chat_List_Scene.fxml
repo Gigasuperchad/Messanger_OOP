@@ -22,5 +22,7 @@
     <Label text="Мои чаты:" style="-fx-font-weight: bold;" />
     <ListView fx:id="Chat_list"
               VBox.vgrow="ALWAYS"/>
-
+    <Button layoutX="20.0" layoutY="420.0" mnemonicParsing="false" onAction="#handleCreateChat" prefHeight="35.0" prefWidth="150.0" text="+ Создать чат" style="-fx-background-color: #2196F3; -fx-text-fill: white;" />
+    <Button layoutX="180.0" layoutY="420.0" mnemonicParsing="false" onAction="#handleProfileButton" prefHeight="35.0" prefWidth="150.0" text="Мой профиль" />
+    <Button layoutX="20.0" layoutY="460.0" mnemonicParsing="false" onAction="#handleLogout" prefHeight="35.0" prefWidth="310.0" text="Выйти" style="-fx-background-color: #f44336; -fx-text-fill: white;" />
 </VBox>

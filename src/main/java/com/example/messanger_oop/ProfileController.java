@@ -17,7 +17,6 @@ public class ProfileController {
 
     @FXML
     public void initialize() {
-        // Получаем текущего пользователя
         currentUser = AppManager.getInstance().getCurrentUser();
         if (currentUser != null) {
             updateProfileInfo();
@@ -31,13 +30,11 @@ public class ProfileController {
     }
 
     private void updateProfileInfo() {
-        // Убедитесь, что все поля не null
         if (firstNameLabel != null) firstNameLabel.setText(currentUser.getFirstName());
         if (lastNameLabel != null) lastNameLabel.setText(currentUser.getLastName());
         if (emailLabel != null) emailLabel.setText(currentUser.getEmail());
         if (nicknameLabel != null) nicknameLabel.setText(currentUser.getNick());
 
-        // Загружаем аватар если есть
         if (currentUser.getAvatarBase64() != null && !currentUser.getAvatarBase64().isEmpty()) {
             try {
                 byte[] imageBytes = Base64.getDecoder().decode(currentUser.getAvatarBase64());

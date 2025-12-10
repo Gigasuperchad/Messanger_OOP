@@ -13,20 +13,28 @@ public class User implements Serializable {
     private String lastName;
     private String email;
     private String avatarBase64;
-    private List<Chat> chatList;
+    private transient List<Chat> chatList;
 
-    // Старый конструктор для совместимости
-    public User(String nick, List<Chat> chats) {
+    public User(String nick) {
         this.nick = nick;
-        this.chatList = chats != null ? chats : new ArrayList<>();
         this.password = "";
-        this.firstName = "";
-        this.lastName = "";
-        this.email = "";
+        this.firstName = "Имя";
+        this.lastName = "Фамилия";
+        this.email = nick + "@example.com";
         this.avatarBase64 = null;
+        this.chatList = new ArrayList<>();
     }
 
-    // Конструктор для регистрации
+    public User(String nick, String password) {
+        this.nick = nick;
+        this.password = password;
+        this.firstName = nick; // По умолчанию ник как имя
+        this.lastName = "Пользователь";
+        this.email = nick + "@example.com";
+        this.avatarBase64 = null;
+        this.chatList = new ArrayList<>();
+    }
+
     public User(String nick, String password, String firstName, String lastName, String email) {
         this.nick = nick;
         this.password = password;
@@ -37,7 +45,6 @@ public class User implements Serializable {
         this.chatList = new ArrayList<>();
     }
 
-    // Конструктор с аватаром
     public User(String nick, String password, String firstName, String lastName,
                 String email, String avatarBase64) {
         this.nick = nick;
@@ -49,18 +56,6 @@ public class User implements Serializable {
         this.chatList = new ArrayList<>();
     }
 
-    // Конструктор для существующего кода
-    public User(String nick) {
-        this.nick = nick;
-        this.password = "";
-        this.firstName = "";
-        this.lastName = "";
-        this.email = "";
-        this.avatarBase64 = null;
-        this.chatList = new ArrayList<>();
-    }
-
-    // Геттеры
     public String getNick() {
         return this.nick;
     }
@@ -86,6 +81,9 @@ public class User implements Serializable {
     }
 
     public List<Chat> getChatList() {
+        if (this.chatList == null) {
+            this.chatList = new ArrayList<>();
+        }
         return this.chatList;
     }
 
@@ -93,7 +91,6 @@ public class User implements Serializable {
         return this.firstName + " " + this.lastName;
     }
 
-    // Сеттеры
     public void setPassword(String password) {
         this.password = password;
     }
@@ -122,86 +119,35 @@ public class User implements Serializable {
         this.chatList = chatList;
     }
 
-    // Метод для добавления чата
     public void add_chat(Chat chat) {
         if (this.chatList == null) {
             this.chatList = new ArrayList<>();
         }
-        this.chatList.add(chat);
+        if (!this.chatList.contains(chat)) {
+            this.chatList.add(chat);
+            System.out.println("Чат добавлен пользователю " + this.nick + ": " + chat.getChatName());
+        }
     }
 
-    // Метод для проверки пароля
     public boolean checkPassword(String password) {
         return this.password.equals(password);
-    }
-
-    // Упрощенный метод toJson
-    public String toJson() {
-        StringBuilder json = new StringBuilder();
-        json.append("{");
-        json.append("\"nick\":\"").append(escapeJson(nick)).append("\",");
-        json.append("\"password\":\"").append(escapeJson(password)).append("\",");
-        json.append("\"firstName\":\"").append(escapeJson(firstName)).append("\",");
-        json.append("\"lastName\":\"").append(escapeJson(lastName)).append("\",");
-        json.append("\"email\":\"").append(escapeJson(email)).append("\"");
-        if (avatarBase64 != null && !avatarBase64.isEmpty()) {
-            json.append(",\"avatarBase64\":\"").append(escapeJson(avatarBase64)).append("\"");
-        }
-        json.append("}");
-        return json.toString();
-    }
-
-    private String escapeJson(String str) {
-        if (str == null) return "";
-        return str.replace("\\", "\\\\")
-                .replace("\"", "\\\"")
-                .replace("\n", "\\n")
-                .replace("\r", "\\r")
-                .replace("\t", "\\t");
-    }
-
-    // Статический метод для создания User из JSON
-    public static User fromJson(String jsonStr) {
-        try {
-            // Упрощенный парсинг JSON
-            String nick = extractValue(jsonStr, "nick");
-            String password = extractValue(jsonStr, "password");
-            String firstName = extractValue(jsonStr, "firstName");
-            String lastName = extractValue(jsonStr, "lastName");
-            String email = extractValue(jsonStr, "email");
-            String avatarBase64 = extractValue(jsonStr, "avatarBase64");
-
-            if (avatarBase64 != null && !avatarBase64.isEmpty()) {
-                return new User(nick, password, firstName, lastName, email, avatarBase64);
-            } else {
-                return new User(nick, password, firstName, lastName, email);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private static String extractValue(String json, String key) {
-        String searchKey = "\"" + key + "\":\"";
-        int startIndex = json.indexOf(searchKey);
-        if (startIndex == -1) return null;
-
-        startIndex += searchKey.length();
-        int endIndex = json.indexOf("\"", startIndex);
-        if (endIndex == -1) return null;
-
-        String value = json.substring(startIndex, endIndex);
-        // Раскодирование escape-последовательностей
-        return value.replace("\\\"", "\"")
-                .replace("\\\\", "\\")
-                .replace("\\n", "\n")
-                .replace("\\r", "\r")
-                .replace("\\t", "\t");
     }
 
     @Override
     public String toString() {
         return getFullName() + " (" + nick + ")";
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        User user = (User) obj;
+        return nick.equals(user.nick);
+    }
+
+    @Override
+    public int hashCode() {
+        return nick.hashCode();
     }
 }

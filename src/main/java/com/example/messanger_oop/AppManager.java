@@ -5,8 +5,6 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class AppManager {
     private static AppManager instance;
@@ -16,6 +14,19 @@ public class AppManager {
 
     private AppManager() {
         repository = new LocalRepository();
+        ensureDirectories();
+    }
+
+    private void ensureDirectories() {
+        String[] dirs = {"local_chats", "users_data"};
+        for (String dir : dirs) {
+            java.io.File directory = new java.io.File(dir);
+            if (!directory.exists()) {
+                if (directory.mkdirs()) {
+                    System.out.println("Создана директория: " + dir);
+                }
+            }
+        }
     }
 
     public static AppManager getInstance() {
@@ -29,26 +40,10 @@ public class AppManager {
         this.stage = stage;
         this.stage.setTitle("Мессенджер");
 
-        // Пробуем загрузить последнего зарегистрированного пользователя
-        loadCurrentUserFromStorage();
-
-        if (currentUser != null) {
-            // Если есть сохраненный пользователь, идем сразу в мессенджер
-            loadMessengerScene(currentUser);
-        } else {
-            // Если нет, показываем регистрацию
-            loadRegistrationScene();
-        }
+        loadLoginScene();
     }
 
-    private void loadCurrentUserFromStorage() {
-        currentUser = UserStorage.getCurrentUser();
-        if (currentUser != null) {
-            System.out.println("Загружен пользователь: " + currentUser.getFullName());
-        }
-    }
-
-    public void loadRegistrationScene() {
+    public void loadLoginScene() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Login_Scene.fxml"));
             Parent root = loader.load();
@@ -57,84 +52,50 @@ public class AppManager {
             stage.show();
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    public void loadMessengerScene(User user) {
-        this.currentUser = user;
-
-        // Сохраняем пользователя
-        UserStorage.saveUser(user);
-
-        // Инициализируем тестовые данные для чатов
-        initializeTestData();
-
-        try {
-            // Переходим к списку чатов
-            switchToChatList();
-        } catch (Exception e) {
-            e.printStackTrace();
-            // В случае ошибки возвращаемся к регистрации
             loadRegistrationScene();
         }
     }
 
-    private void initializeTestData() {
+    public void loadRegistrationScene() {
         try {
-            // Проверяем, есть ли уже чаты в репозитории
-            if (repository.getChats().isEmpty()) {
-                System.out.println("Создаем тестовые чаты...");
-
-                // Создаем тестовых пользователей с полными данными
-                User user1 = new User("Анна", "password123", "Анна", "Иванова", "anna@example.com");
-                User user2 = new User("Борис", "password123", "Борис", "Петров", "boris@example.com");
-                User user3 = new User("Мария", "password123", "Мария", "Сидорова", "maria@example.com");
-
-                // Создаем чат 1 (приватный)
-                List<User> chat1Users = new ArrayList<>();
-                chat1Users.add(currentUser);
-                chat1Users.add(user1);
-                Chat privateChat = new Chat(chat1Users, "Приватный чат с Анной");
-
-                // Создаем чат 2 (групповой)
-                List<User> chat2Users = new ArrayList<>();
-                chat2Users.add(currentUser);
-                chat2Users.add(user2);
-                chat2Users.add(user3);
-                Chat groupChat = new Chat(chat2Users, "Рабочая группа");
-
-                // Добавляем чаты в репозиторий
-                repository.add_chat(privateChat);
-                repository.add_chat(groupChat);
-
-                // Тестовые сообщения для чата 1
-                if (currentUser != null) {
-                    privateChat.send_message(new Message(currentUser, "Привет, Анна! Как дела?", new java.util.Date()));
-                }
-                if (user1 != null) {
-                    privateChat.send_message(new Message(user1, "Привет! Все отлично, спасибо! А у тебя?", new java.util.Date()));
-                }
-
-                // Тестовые сообщения для чата 2
-                if (currentUser != null) {
-                    groupChat.send_message(new Message(currentUser, "Всем добрый день! Начинаем собрание.", new java.util.Date()));
-                }
-                if (user2 != null) {
-                    groupChat.send_message(new Message(user2, "Приветствую! Я готов.", new java.util.Date()));
-                }
-
-                System.out.println("Создано " + repository.getChats().size() + " тестовых чата");
-            } else {
-                System.out.println("Чаты уже загружены: " + repository.getChats().size() + " чатов");
-            }
-        } catch (Exception e) {
-            System.err.println("Ошибка инициализации тестовых данных: " + e.getMessage());
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Registration_Scene.fxml"));
+            Parent root = loader.load();
+            Scene scene = new Scene(root, 500, 700);
+            stage.setScene(scene);
+            stage.show();
+        } catch (IOException e) {
             e.printStackTrace();
+            System.err.println("Ошибка загрузки сцены регистрации: " + e.getMessage());
         }
     }
 
-    // Метод для перехода в окно чата
+    public void loadMessengerScene(User user) {
+        System.out.println("\nЗАГРУЗКА СЦЕНЫ МЕССЕНДЖЕРА ДЛЯ ПОЛЬЗОВАТЕЛЯ:");
+        System.out.println("   👤 Пользователь: " + user.getNick());
+
+        this.currentUser = user;
+        UserStorage.saveUser(user);
+
+        if (repository instanceof LocalRepository) {
+            LocalRepository localRepo = (LocalRepository) repository;
+            localRepo.setCurrentUser(user);
+
+            localRepo.printChatsInfo();
+        }
+
+        try {
+            switchToChatList();
+        } catch (Exception e) {
+            e.printStackTrace();
+            loadLoginScene();
+        }
+    }
+
     public void switchToChatScene(Chat chat) {
+        System.out.println("\nПЕРЕКЛЮЧЕНИЕ НА ЧАТ:");
+        System.out.println("   Чат: " + chat.getChatName());
+        System.out.println("   Сообщений: " + chat.get_message_count());
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_Scene.fxml"));
             Parent root = loader.load();
@@ -143,7 +104,6 @@ public class AppManager {
             if (controller != null) {
                 controller.setRepository(repository);
                 controller.setChat(chat);
-                // ВАЖНО: передаем текущего пользователя в контроллер чата
                 controller.setCurrentUser(currentUser);
             }
 
@@ -156,8 +116,11 @@ public class AppManager {
         }
     }
 
-    // Метод для перехода к списку чатов
     public void switchToChatList() {
+        System.out.println("\nПЕРЕКЛЮЧЕНИЕ НА СПИСОК ЧАТОВ");
+        System.out.println("   Текущий пользователь: " +
+                (currentUser != null ? currentUser.getNick() : "null"));
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_List_Scene.fxml"));
             Parent root = loader.load();
@@ -168,7 +131,7 @@ public class AppManager {
             }
 
             stage.setScene(new Scene(root, 350, 500));
-            stage.setTitle("Мои чаты - " + currentUser.getFullName());
+            stage.setTitle("Мои чаты - " + (currentUser != null ? currentUser.getFullName() : "Неизвестный"));
             stage.show();
         } catch (IOException e) {
             System.err.println("Ошибка загрузки Chat_List_Scene.fxml: " + e.getMessage());
@@ -176,7 +139,29 @@ public class AppManager {
         }
     }
 
-    // Метод для перехода к профилю
+    public void openCreateChatWindow() {
+        System.out.println("\nОТКРЫТИЕ ОКНА СОЗДАНИЯ ЧАТА");
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("Create_Chat_Scene.fxml"));
+            Parent root = loader.load();
+
+            CreateChatController controller = loader.getController();
+            if (controller != null) {
+                controller.setCurrentUser(currentUser);
+            }
+
+            Stage createChatStage = new Stage();
+            createChatStage.setTitle("Создание нового чата");
+            createChatStage.setScene(new Scene(root, 700, 550));
+            createChatStage.show();
+
+        } catch (Exception e) {
+            System.err.println("Ошибка открытия окна создания чата: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
     public void switchToProfileScene() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Profile_Scene.fxml"));
@@ -191,7 +176,6 @@ public class AppManager {
         }
     }
 
-    // Метод для перехода к серверному мессенджеру (если нужен)
     public void switchToServerMessenger() {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Messenger.fxml"));
@@ -208,6 +192,37 @@ public class AppManager {
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Ошибка загрузки серверного мессенджера: " + e.getMessage());
+        }
+    }
+
+    public void logout() {
+        System.out.println("\nВЫХОД ИЗ СИСТЕМЫ...");
+
+        // Отправляем команду сохранения на сервер
+        if (repository instanceof LocalRepository) {
+            LocalRepository localRepo = (LocalRepository) repository;
+            if (localRepo.isConnectedToServer()) {
+                try {
+                    localRepo.disconnect();
+                    System.out.println("Данные отправлены на сервер для сохранения");
+                } catch (Exception e) {
+                    System.err.println("Ошибка отправки данных на сервер: " + e.getMessage());
+                }
+            }
+        }
+
+        UserStorage.clearCurrentUser();
+        currentUser = null;
+
+        repository = new LocalRepository();
+
+        loadLoginScene();
+    }
+
+    public void exitApplication() {
+        logout();
+        if (stage != null) {
+            stage.close();
         }
     }
 

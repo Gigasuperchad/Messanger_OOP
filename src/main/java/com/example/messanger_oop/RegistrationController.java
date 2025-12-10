@@ -11,7 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Base64;
 
-public class RegisterController {
+public class RegistrationController {
 
     @FXML private TextField firstNameField;
     @FXML private TextField lastNameField;
@@ -25,8 +25,9 @@ public class RegisterController {
 
     private String avatarImagePath;
 
+
     @FXML
-    public void initialize() {
+    public void initialize() throws IOException {
         uploadAvatarButton.setOnAction(event -> uploadAvatar());
         registerButton.setOnAction(event -> registerUser());
         avatarImagePath = null;
@@ -52,7 +53,6 @@ public class RegisterController {
     }
 
     private void registerUser() {
-        // Валидация полей
         if (firstNameField.getText().isEmpty() ||
                 lastNameField.getText().isEmpty() ||
                 emailField.getText().isEmpty() ||
@@ -73,14 +73,12 @@ public class RegisterController {
             return;
         }
 
-        // Проверка существующего пользователя
         if (UserStorage.userExists(usernameField.getText())) {
             showError("Пользователь с таким логином уже существует!");
             return;
         }
 
         try {
-            // Создаем пользователя
             String avatarBase64 = null;
             if (avatarImagePath != null) {
                 avatarBase64 = encodeImageToBase64(avatarImagePath);
@@ -95,14 +93,11 @@ public class RegisterController {
                     avatarBase64
             );
 
-            // Сохраняем пользователя
             UserStorage.saveUser(user);
 
-            // Показываем успешное сообщение
             statusLabel.setText("Регистрация успешна! Профиль сохранен.");
             statusLabel.setStyle("-fx-text-fill: green;");
 
-            // Переходим к мессенджеру через AppManager
             AppManager.getInstance().loadMessengerScene(user);
 
         } catch (Exception e) {
