@@ -2,6 +2,8 @@ package com.example.messanger_oop;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Message implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -10,11 +12,15 @@ public class Message implements Serializable {
     private String content;
     private Date timestamp;
     private boolean edited;
-    private String filePath;    // Путь к файлу
-    private String fileName;    // Имя файла
-    private String fileType;    // Тип файла (image, document, etc.)
-    private long fileSize;      // Размер файла в байтах
-    private boolean hasAttachment; // Есть ли вложение
+    private String filePath;
+    private String fileName;
+    private String fileType;
+    private long fileSize;
+    private boolean hasAttachment;
+
+    // Новые поля для статуса доставки
+    private MessageDeliveryStatus deliveryStatus;
+    private Map<String, Boolean> readBy; // Кто прочитал сообщение (username -> прочитано)
 
     public Message(User sender, String content, Date timestamp) {
         this.sender = sender;
@@ -26,6 +32,8 @@ public class Message implements Serializable {
         this.fileName = null;
         this.fileType = null;
         this.fileSize = 0;
+        this.deliveryStatus = new MessageDeliveryStatus();
+        this.readBy = new HashMap<>();
     }
 
     // Конструктор для сообщения с файлом
@@ -40,6 +48,8 @@ public class Message implements Serializable {
         this.fileName = fileName;
         this.fileType = fileType;
         this.fileSize = fileSize;
+        this.deliveryStatus = new MessageDeliveryStatus();
+        this.readBy = new HashMap<>();
     }
 
     // Геттеры и сеттеры
@@ -74,6 +84,30 @@ public class Message implements Serializable {
     public boolean isEdited() { return edited; }
     public void setEdited(boolean edited) { this.edited = edited; }
 
+    // Новые геттеры и сеттеры для статуса доставки
+    public MessageDeliveryStatus getDeliveryStatus() { return deliveryStatus; }
+    public void setDeliveryStatus(MessageDeliveryStatus deliveryStatus) {
+        this.deliveryStatus = deliveryStatus;
+    }
+
+    public Map<String, Boolean> getReadBy() { return readBy; }
+    public void setReadBy(Map<String, Boolean> readBy) { this.readBy = readBy; }
+
+    public void markAsRead(String username) {
+        readBy.put(username, true);
+        if (deliveryStatus != null) {
+            deliveryStatus.setStatus(MessageDeliveryStatus.Status.READ);
+        }
+    }
+
+    public boolean isReadBy(String username) {
+        return readBy.getOrDefault(username, false);
+    }
+
+    public int getReadCount() {
+        return (int) readBy.values().stream().filter(v -> v).count();
+    }
+
     // Метод для форматирования размера файла
     public String getFormattedFileSize() {
         if (fileSize < 1024) {
@@ -84,6 +118,7 @@ public class Message implements Serializable {
             return String.format("%.1f МБ", fileSize / (1024.0 * 1024.0));
         }
     }
+
     public String getShortFileInfo() {
         if (hasAttachment) {
             if (fileType.startsWith("image/")) {
@@ -94,6 +129,7 @@ public class Message implements Serializable {
         }
         return "";
     }
+
     // Метод для определения иконки файла по типу
     public String getFileIcon() {
         if (fileType == null) return "📄";
@@ -119,10 +155,13 @@ public class Message implements Serializable {
 
     @Override
     public String toString() {
+        String statusIcon = deliveryStatus != null ?
+                deliveryStatus.getStatus().getIcon() + " " : "";
+
         if (hasAttachment) {
-            return String.format("%s [Файл: %s (%s)] %s",
-                    getFileIcon(), fileName, getFormattedFileSize(), content);
+            return String.format("%s%s [Файл: %s (%s)] %s",
+                    statusIcon, getFileIcon(), fileName, getFormattedFileSize(), content);
         }
-        return content;
+        return statusIcon + content;
     }
 }

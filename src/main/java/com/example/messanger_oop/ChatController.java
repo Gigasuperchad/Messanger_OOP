@@ -7,6 +7,8 @@ import javafx.collections.ObservableList;
 import javafx.stage.FileChooser;
 import javafx.scene.control.Alert;
 import javafx.scene.control.TextInputDialog;
+import javafx.stage.Stage;
+
 import java.util.Optional;
 import java.util.List;
 import java.util.Date;
@@ -33,10 +35,17 @@ public class ChatController {
     @FXML
     private Label selectedFileLabel;
 
+    @FXML
+    private Label chatStatusLabel;
+
+    @FXML
+    private ListView<String> onlineUsersListView;
+
     private Repository repository;
     private Chat chat;
     private User currentUser;
     private ObservableList<String> messages;
+    private ObservableList<String> onlineUsers;
     private boolean isSending = false;
 
     // Переменные для хранения выбранного файла
@@ -49,6 +58,9 @@ public class ChatController {
     public void initialize() {
         messages = FXCollections.observableArrayList();
         messageListView.setItems(messages);
+
+        onlineUsers = FXCollections.observableArrayList();
+        onlineUsersListView.setItems(onlineUsers);
 
         // Инициализация выбранного файла
         selectedFile = null;
@@ -70,9 +82,72 @@ public class ChatController {
         // Обработчик двойного клика для сообщений и файлов
         messageListView.setOnMouseClicked(event -> {
             if (event.getClickCount() == 2) {
-                handleMessageDoubleClick();
+                handleMessageDoubleClick(event);
             }
         });
+
+        // Обновляем статусы каждые 10 секунд
+        javafx.animation.Timeline timeline = new javafx.animation.Timeline(
+                new javafx.animation.KeyFrame(
+                        javafx.util.Duration.seconds(10),
+                        e -> updateChatStatus()
+                )
+        );
+        timeline.setCycleCount(javafx.animation.Animation.INDEFINITE);
+        timeline.play();
+    }
+
+    private void updateChatStatus() {
+        if (chat != null && currentUser != null) {
+            updateChatStatusLabel();
+            updateOnlineUsersList();
+        }
+    }
+
+    private void updateChatStatusLabel() {
+        if (chat == null) return;
+
+        StringBuilder statusText = new StringBuilder();
+
+        int totalUsers = chat.getUsers().size();
+        int onlineCount = 0;
+
+        for (User user : chat.getUsers()) {
+            if (StatusManager.getInstance().isUserOnline(user.getNick())) {
+                onlineCount++;
+            }
+        }
+
+        statusText.append("👥 Участников: ").append(totalUsers)
+                .append(" | 🟢 Онлайн: ").append(onlineCount);
+
+        if (chatStatusLabel != null) {
+            chatStatusLabel.setText(statusText.toString());
+            chatStatusLabel.setStyle("-fx-text-fill: #666666; -fx-font-size: 12px;");
+        }
+    }
+
+    private void updateOnlineUsersList() {
+        if (chat == null || onlineUsersListView == null) return;
+
+        onlineUsers.clear();
+
+        for (User user : chat.getUsers()) {
+            String username = user.getNick();
+            UserStatus status = StatusManager.getInstance().getUserStatus(username);
+
+            if (status != null && status.isOnline()) {
+                String display = status.getIcon() + " " + user.getFullName();
+                if (!status.getCustomMessage().isEmpty()) {
+                    display += " - " + status.getCustomMessage();
+                }
+                onlineUsers.add(display);
+            }
+        }
+
+        if (onlineUsers.isEmpty()) {
+            onlineUsers.add("😴 Никто не в сети");
+        }
     }
 
     private void handleAttachImage() {
@@ -161,12 +236,18 @@ public class ChatController {
     public void setChat(Chat chat) {
         this.chat = chat;
         updateMessageList();
+        updateChatStatus();
     }
 
     public void setCurrentUser(User user) {
         this.currentUser = user;
         System.out.println("Установлен текущий пользователь: " +
                 (user != null ? user.getNick() : "null"));
+
+        // Устанавливаем статус онлайн для пользователя
+        if (user != null) {
+            StatusManager.getInstance().setUserOnline(user.getNick());
+        }
     }
 
     private void updateMessageList() {
@@ -180,44 +261,60 @@ public class ChatController {
                     String senderNick = message.getSender() != null ?
                             message.getSender().getNick() : "Неизвестный";
 
-                    // Форматирование сообщения с учетом вложений
+                    // Получаем статус отправителя
+                    UserStatus senderStatus = StatusManager.getInstance().getUserStatus(senderNick);
+                    String statusIcon = senderStatus != null ? senderStatus.getIcon() : "⚫";
+
+                    // Статус доставки
+                    String deliveryStatus = "";
+                    if (message.getDeliveryStatus() != null) {
+                        deliveryStatus = " " + message.getDeliveryStatus().getStatus().getIcon();
+                    }
+
+                    // Форматирование сообщения
                     String messageDisplay;
                     if (message.hasAttachment()) {
-                        // Проверяем, является ли файл изображением
                         if (message.getFileType() != null && message.getFileType().startsWith("image/")) {
-                            // Для изображений показываем специальную пометку
                             String fileInfo = message.getShortFileInfo();
 
                             if (!message.getContent().isEmpty()) {
-                                messageDisplay = String.format("[%s] %s: %s | %s",
-                                        timestamp, senderNick, fileInfo, message.getContent());
+                                messageDisplay = String.format("[%s] %s%s: %s | %s%s",
+                                        timestamp, statusIcon, senderNick, fileInfo,
+                                        message.getContent(), deliveryStatus);
                             } else {
-                                messageDisplay = String.format("[%s] %s: %s",
-                                        timestamp, senderNick, fileInfo);
+                                messageDisplay = String.format("[%s] %s%s: %s%s",
+                                        timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
                             }
                         } else {
-                            // Для других файлов
                             String fileInfo = String.format("%s %s (%s)",
                                     message.getFileIcon(),
                                     message.getFileName(),
                                     message.getFormattedFileSize());
 
                             if (!message.getContent().isEmpty()) {
-                                messageDisplay = String.format("[%s] %s: %s | %s",
-                                        timestamp, senderNick, fileInfo, message.getContent());
+                                messageDisplay = String.format("[%s] %s%s: %s | %s%s",
+                                        timestamp, statusIcon, senderNick, fileInfo,
+                                        message.getContent(), deliveryStatus);
                             } else {
-                                messageDisplay = String.format("[%s] %s: %s",
-                                        timestamp, senderNick, fileInfo);
+                                messageDisplay = String.format("[%s] %s%s: %s%s",
+                                        timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
                             }
                         }
                     } else {
-                        // Обычное текстовое сообщение
                         String content = message.getContent() != null ?
                                 message.getContent() : "";
                         String editedMark = message.isEdited() ? " (изменено)" : "";
 
-                        messageDisplay = String.format("[%s] %s: %s%s",
-                                timestamp, senderNick, content, editedMark);
+                        // Количество прочитавших
+                        String readCount = "";
+                        int readCountNum = message.getReadCount();
+                        if (readCountNum > 0) {
+                            readCount = " 👁️" + readCountNum;
+                        }
+
+                        messageDisplay = String.format("[%s] %s%s: %s%s%s%s",
+                                timestamp, statusIcon, senderNick,
+                                content, editedMark, deliveryStatus, readCount);
                     }
                     messages.add(messageDisplay);
                 }
@@ -235,7 +332,7 @@ public class ChatController {
         return sdf.format(timestamp);
     }
 
-    private void handleMessageDoubleClick() {
+    private void handleMessageDoubleClick(javafx.scene.input.MouseEvent event) {
         int selectedIndex = messageListView.getSelectionModel().getSelectedIndex();
 
         System.out.println("\n=== ДВОЙНОЙ КЛИК НА СООБЩЕНИИ ===");
@@ -249,6 +346,13 @@ public class ChatController {
                 // Если сообщение содержит файл - открываем его
                 if (message.hasAttachment() && message.getFilePath() != null) {
                     openAttachment(message);
+                    return;
+                }
+
+                // Проверяем, зажата ли клавиша Ctrl (через событие мыши)
+                if (event.isControlDown() || event.isShortcutDown()) {
+                    // Ctrl+двойной клик для статуса доставки
+                    showDeliveryDetails(message);
                     return;
                 }
 
@@ -275,6 +379,30 @@ public class ChatController {
                     "chat=" + (chat != null) + ", " +
                     "currentUser=" + (currentUser != null));
         }
+    }
+
+    private void showDeliveryDetails(Message message) {
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Статус доставки сообщения");
+        alert.setHeaderText("Информация о доставке");
+
+        StringBuilder content = new StringBuilder();
+        content.append("Сообщение: ").append(message.getContent()).append("\n\n");
+
+        if (message.getDeliveryStatus() != null) {
+            content.append(message.getDeliveryStatus().getDetailedStatus());
+        }
+
+        content.append("\n\nПрочитали (").append(message.getReadCount()).append("):\n");
+        for (String username : message.getReadBy().keySet()) {
+            if (message.isReadBy(username)) {
+                content.append("• ").append(username).append("\n");
+            }
+        }
+
+        alert.setContentText(content.toString());
+        alert.getDialogPane().setPrefSize(400, 300);
+        alert.showAndWait();
     }
 
     private void openAttachment(Message message) {
@@ -364,6 +492,10 @@ public class ChatController {
                     updatedMessage.setHasAttachment(true);
                 }
 
+                // Сохраняем статус доставки
+                updatedMessage.setDeliveryStatus(message.getDeliveryStatus());
+                updatedMessage.setReadBy(message.getReadBy());
+
                 // Обновляем в чате
                 chat.getMessages().set(index, updatedMessage);
 
@@ -427,6 +559,9 @@ public class ChatController {
                     message = new Message(currentUser, text, new Date());
                 }
 
+                // Устанавливаем начальный статус отправки
+                message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENDING);
+
                 if (repository != null) {
                     // Проверяем, поддерживает ли репозиторий новый метод
                     if (repository instanceof LocalRepository) {
@@ -435,8 +570,16 @@ public class ChatController {
                         // Если не поддерживает, используем старый метод
                         repository.send_msg(chat, text);
                     }
+
+                    // Обновляем статус на "отправлено"
+                    message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENT);
+
+                    // Помечаем сообщение как доставленное для отправителя
+                    message.markAsRead(currentUser.getNick());
                 } else {
                     chat.send_message(message);
+                    message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENT);
+                    message.markAsRead(currentUser.getNick());
                 }
 
                 updateMessageList();
@@ -470,7 +613,30 @@ public class ChatController {
     @FXML
     private void handleBackToChatList() {
         System.out.println("Возврат к списку чатов...");
+
+        // Обновляем статус последнего посещения
+        if (currentUser != null) {
+            StatusManager.getInstance().updateLastSeen(currentUser.getNick());
+        }
+
         AppManager.getInstance().switchToChatList();
+    }
+
+    @FXML
+    private void handleStatusButton() {
+        try {
+            javafx.fxml.FXMLLoader loader = new javafx.fxml.FXMLLoader(getClass().getResource("StatusWindow.fxml"));
+            javafx.scene.Parent root = loader.load();
+
+            Stage statusStage = new Stage();
+            statusStage.setTitle("Настройка статуса");
+            statusStage.setScene(new javafx.scene.Scene(root, 400, 300));
+            statusStage.show();
+
+        } catch (Exception e) {
+            System.err.println("Ошибка открытия окна статуса: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
 
     private void showAlert(String title, String message) {

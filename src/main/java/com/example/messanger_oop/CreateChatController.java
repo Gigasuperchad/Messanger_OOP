@@ -175,6 +175,7 @@ public class CreateChatController {
 
             Chat newChat = new Chat(allChatUsers, chatName);
 
+            // Создаем приветственное сообщение
             Message welcomeMessage = new Message(currentUser,
                     "Чат \"" + chatName + "\" создан! Добро пожаловать!", new java.util.Date());
             newChat.send_message(welcomeMessage);
@@ -189,8 +190,18 @@ public class CreateChatController {
 
                 closeWindow();
 
-                System.out.println("Переход к списку чатов...");
-                AppManager.getInstance().switchToChatList();
+                // Небольшая задержка перед обновлением списка чатов
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(1000);
+                        javafx.application.Platform.runLater(() -> {
+                            System.out.println("Переход к списку чатов...");
+                            AppManager.getInstance().switchToChatList();
+                        });
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }).start();
             } else {
                 System.err.println("Репозиторий не найден!");
                 showAlert("Ошибка", "Репозиторий не инициализирован");
