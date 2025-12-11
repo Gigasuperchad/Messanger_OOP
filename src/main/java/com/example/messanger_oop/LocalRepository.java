@@ -29,7 +29,7 @@ public class LocalRepository implements Repository {
         System.out.println("Trying to connect to server...");
         try {
             socket = new Socket();
-            socket.connect(new InetSocketAddress("localhost", 12345), 3000);
+            socket.connect(new InetSocketAddress("127.0.0.0", 12345), 3000);
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             connectedToServer = true;
