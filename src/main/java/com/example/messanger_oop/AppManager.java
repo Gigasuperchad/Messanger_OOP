@@ -3,7 +3,6 @@ package com.example.messanger_oop;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 import java.io.IOException;
 
@@ -15,22 +14,19 @@ public class AppManager {
     private Chat currentChat;
     private boolean appActive = true;
     private boolean wasFullScreen = false;
-    private double windowWidth = 450;
+    private double windowWidth = 450; // Сохраняем размеры окна
     private double windowHeight = 650;
-    private double windowX = -1;
+    private double windowX = -1; // Позиция окна
     private double windowY = -1;
-    private boolean maximized = false;
+    private boolean maximized = false; // Состояние максимизации
 
     private AppManager() {
         repository = new LocalRepository();
         ensureDirectories();
-
-        // Инициализируем менеджер статусов
-        StatusManager.getInstance();
     }
 
     private void ensureDirectories() {
-        String[] dirs = {"local_chats", "users_data", "chat_files", "server_data"};
+        String[] dirs = {"local_chats", "users_data"};
         for (String dir : dirs) {
             java.io.File directory = new java.io.File(dir);
             if (!directory.exists()) {
@@ -106,6 +102,7 @@ public class AppManager {
 
     public void loadLoginScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Login_Scene.fxml"));
@@ -113,6 +110,7 @@ public class AppManager {
             Scene scene = new Scene(root, windowWidth, windowHeight);
             stage.setScene(scene);
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
         } catch (IOException e) {
@@ -123,6 +121,7 @@ public class AppManager {
 
     public void loadRegistrationScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Registration_Scene.fxml"));
@@ -130,6 +129,7 @@ public class AppManager {
             Scene scene = new Scene(root, windowWidth, windowHeight);
             stage.setScene(scene);
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
         } catch (IOException e) {
@@ -145,21 +145,9 @@ public class AppManager {
         this.currentUser = user;
         UserStorage.saveUser(user);
 
-        // Устанавливаем статус онлайн
-        StatusManager.getInstance().setUserOnline(user.getNick());
-
         if (repository instanceof LocalRepository) {
             LocalRepository localRepo = (LocalRepository) repository;
             localRepo.setCurrentUser(user);
-
-            // Принудительно запрашиваем список чатов с сервера
-            if (localRepo.isConnectedToServer()) {
-                System.out.println("Запрашиваем список чатов с сервера...");
-                // Запрос списка чатов будет выполнен в setCurrentUser
-            } else {
-                System.out.println("Работаем в автономном режиме");
-            }
-
             localRepo.printChatsInfo();
         }
 
@@ -176,9 +164,11 @@ public class AppManager {
         System.out.println("   Чат: " + chat.getChatName());
         System.out.println("   Сообщений: " + chat.get_message_count());
 
+        // Устанавливаем текущий чат
         this.currentChat = chat;
 
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_Scene.fxml"));
@@ -195,6 +185,7 @@ public class AppManager {
             stage.setScene(scene);
             stage.setTitle("Чат: " + chat.getChatName());
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
         } catch (IOException e) {
@@ -208,9 +199,11 @@ public class AppManager {
         System.out.println("   Текущий пользователь: " +
                 (currentUser != null ? currentUser.getNick() : "null"));
 
+        // Сбрасываем текущий чат
         this.currentChat = null;
 
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Chat_List_Scene.fxml"));
@@ -225,14 +218,9 @@ public class AppManager {
             stage.setScene(scene);
             stage.setTitle("Мои чаты - " + (currentUser != null ? currentUser.getFullName() : "Неизвестный"));
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
-
-            // Обновляем список чатов
-            if (repository instanceof LocalRepository) {
-                ((LocalRepository) repository).printChatsInfo();
-            }
-
         } catch (IOException e) {
             System.err.println("Ошибка загрузки Chat_List_Scene.fxml: " + e.getMessage());
             e.printStackTrace();
@@ -262,43 +250,9 @@ public class AppManager {
         }
     }
 
-    public void openStatusWindow() {
-        System.out.println("\nОТКРЫТИЕ ОКНА СТАТУСА");
-
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("StatusWindow.fxml"));
-            Parent root = loader.load();
-
-            // Устанавливаем текущего пользователя в контроллер
-            StatusController controller = loader.getController();
-            if (controller != null) {
-                // Контроллер сам загрузит пользователя в методе initialize()
-            }
-
-            Stage statusStage = new Stage();
-            statusStage.setTitle("Настройка статуса");
-            statusStage.setScene(new Scene(root, 400, 300));
-            statusStage.initOwner(stage); // Делаем окно модальным к главному
-            statusStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
-            statusStage.show();
-
-        } catch (Exception e) {
-            System.err.println("Ошибка открытия окна статуса: " + e.getMessage());
-            e.printStackTrace();
-
-            // Показать альтернативное уведомление
-            javafx.application.Platform.runLater(() -> {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setTitle("Ошибка");
-                alert.setHeaderText("Не удалось открыть окно статуса");
-                alert.setContentText("Файл StatusWindow.fxml не найден или поврежден.");
-                alert.showAndWait();
-            });
-        }
-    }
-
     public void switchToProfileScene() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Profile_Scene.fxml"));
@@ -308,6 +262,7 @@ public class AppManager {
             stage.setScene(scene);
             stage.setTitle("Мой профиль - " + currentUser.getFullName());
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
         } catch (IOException e) {
@@ -318,6 +273,7 @@ public class AppManager {
 
     public void switchToServerMessenger() {
         try {
+            // Сохраняем состояние окна перед сменой сцены
             saveWindowState();
 
             FXMLLoader loader = new FXMLLoader(getClass().getResource("Messenger.fxml"));
@@ -332,6 +288,7 @@ public class AppManager {
             stage.setScene(scene);
             stage.setTitle("Серверный мессенджер - " + currentUser.getFullName());
 
+            // Восстанавливаем состояние окна
             restoreWindowState();
             stage.show();
         } catch (IOException e) {
@@ -343,13 +300,10 @@ public class AppManager {
     public void logout() {
         System.out.println("\nВЫХОД ИЗ СИСТЕМЫ...");
 
+        // Сохраняем состояние окна перед выходом
         saveWindowState();
 
-        // Устанавливаем статус оффлайн
-        if (currentUser != null) {
-            StatusManager.getInstance().setUserOffline(currentUser.getNick());
-        }
-
+        // Отправляем команду сохранения на сервер
         if (repository instanceof LocalRepository) {
             LocalRepository localRepo = (LocalRepository) repository;
             if (localRepo.isConnectedToServer()) {
@@ -372,11 +326,6 @@ public class AppManager {
     }
 
     public void exitApplication() {
-        // Устанавливаем статус оффлайн перед выходом
-        if (currentUser != null) {
-            StatusManager.getInstance().setUserOffline(currentUser.getNick());
-        }
-
         logout();
         if (stage != null) {
             stage.close();
@@ -405,16 +354,20 @@ public class AppManager {
 
     private void restoreWindowState() {
         if (stage != null) {
+            // Восстанавливаем позицию, если она была сохранена
             if (windowX >= 0 && windowY >= 0) {
                 stage.setX(windowX);
                 stage.setY(windowY);
             }
 
+            // Восстанавливаем размер
             stage.setWidth(windowWidth);
             stage.setHeight(windowHeight);
 
+            // Восстанавливаем максимизацию
             stage.setMaximized(maximized);
 
+            // Восстанавливаем полный экран (делаем это последним)
             if (wasFullScreen) {
                 stage.setFullScreen(true);
             }
@@ -438,6 +391,7 @@ public class AppManager {
         return stage;
     }
 
+    // Новые методы для уведомлений
     public Chat getCurrentChat() {
         return currentChat;
     }
@@ -447,6 +401,7 @@ public class AppManager {
     }
 
     public void showNotification(String title, String message) {
+        // Показываем уведомление только если приложение не активно
         if (!appActive) {
             System.out.println("\nСИСТЕМНОЕ УВЕДОМЛЕНИЕ:");
             System.out.println("   Заголовок: " + title);

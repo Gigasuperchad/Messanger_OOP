@@ -12,6 +12,4 @@ public interface Repository {
     void send_msg(Chat chat, String message);
     void updateMessage(Chat chat, int messageIndex, Message updatedMessage);
     void saveMessage(Message message, Chat chat);
-    // Добавить метод удаления чата
-    void deleteChat(Chat chat);
 }

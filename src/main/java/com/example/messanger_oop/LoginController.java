@@ -4,7 +4,6 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import java.io.File;
 import java.util.Base64;
@@ -38,9 +37,6 @@ public class LoginController {
     private ImageView avatarImageView;
 
     private User currentUser;
-
-    @FXML
-    private VBox profileInfoPanel;
 
     @FXML
     public void initialize() {
@@ -173,10 +169,6 @@ public class LoginController {
             return;
         }
 
-        if (profileInfoPanel != null) {
-            profileInfoPanel.setVisible(true);
-        }
-
         firstNameLabel.setText(user.getFirstName());
         lastNameLabel.setText(user.getLastName());
         emailLabel.setText(user.getEmail());
@@ -216,9 +208,6 @@ public class LoginController {
         if (lastNameLabel != null) lastNameLabel.setVisible(false);
         if (emailLabel != null) emailLabel.setVisible(false);
         if (avatarImageView != null) avatarImageView.setVisible(false);
-        if (profileInfoPanel != null) {
-            profileInfoPanel.setVisible(false);
-        }
     }
 
     private void setDefaultAvatar() {
