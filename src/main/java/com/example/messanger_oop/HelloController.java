@@ -1,6 +1,7 @@
 package com.example.messanger_oop;
 
 import javafx.fxml.FXML;
+import javafx.geometry.Insets;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.layout.HBox;
@@ -254,9 +255,19 @@ public class HelloController {
         // Устанавливаем фиксированную высоту ячейки для лучшего контроля
         Chat_list.setFixedCellSize(60);
 
-        // Разрешаем ListView растягиваться
+        // Разрешаем ListView растягиваться на всю доступную высоту
         Chat_list.setMaxWidth(Double.MAX_VALUE);
         Chat_list.setMaxHeight(Double.MAX_VALUE);
+        Chat_list.setMinHeight(0); // Позволяем сжиматься
+
+        // Привязываем предпочтительную высоту ListView к высоте контейнера
+        Chat_list.prefHeightProperty().bind(chatListContainer.heightProperty());
+
+        // Устанавливаем, чтобы ListView занимал всё доступное пространство
+        VBox.setVgrow(Chat_list, Priority.ALWAYS);
+
+        // Настраиваем отступы внутри ListView
+        Chat_list.setPadding(new Insets(0));
     }
 
     private void setupButtonStyles() {
