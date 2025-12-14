@@ -68,11 +68,11 @@
                         <!-- Кнопки управления -->
                         <VBox spacing="10" alignment="CENTER">
                             <Button fx:id="addUserButton"
-                                    text="➡Добавить"
+                                    text="➡"
                                     style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 10;"
                                     prefWidth="120"/>
                             <Button fx:id="removeUserButton"
-                                    text="⬅Удалить"
+                                    text="⬅"
                                     style="-fx-background-color: #f44336; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 20; -fx-background-radius: 10;"
                                     prefWidth="120"/>
                         </VBox>

@@ -1,116 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
+
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.image.ImageView?>
 <?import javafx.scene.image.Image?>
+<?import javafx.scene.shape.Circle?>
+<?import javafx.scene.shape.*?>
+<?import javafx.scene.text.*?>
+<?import javafx.scene.*?>
 
-<VBox xmlns="http://javafx.com/javafx"
-      xmlns:fx="http://javafx.com/fxml"
-      fx:controller="com.example.messanger_oop.RegistrationController"
-      prefHeight="700.0"
-      prefWidth="500.0"
-      spacing="20.0"
-      alignment="CENTER"
-      style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);">
+<ScrollPane xmlns="http://javafx.com/javafx"
+            xmlns:fx="http://javafx.com/fxml"
+            fx:controller="com.example.messanger_oop.RegistrationController"
+            fitToWidth="true"
+            vbarPolicy="AS_NEEDED"
+            hbarPolicy="NEVER"
+            style="-fx-background-color: transparent; -fx-border-color: transparent;">
 
-    <padding>
-        <Insets top="30.0" right="40.0" bottom="30.0" left="40.0"/>
-    </padding>
+    <VBox alignment="CENTER" spacing="20.0"
+          style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);">
 
-    <!-- Заголовок -->
-    <Label text="📝 Регистрация"
-           style="-fx-font-weight: bold; -fx-font-size: 28; -fx-text-fill: white;"/>
+        <padding>
+            <Insets top="30.0" right="40.0" bottom="30.0" left="40.0"/>
+        </padding>
 
-    <!-- Форма регистрации -->
-    <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;">
+        <!-- Заголовок -->
+        <Label text="📝 Регистрация"
+               style="-fx-font-weight: bold; -fx-font-size: 28; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);"/>
+
+        <!-- Форма регистрации -->
         <VBox spacing="15.0" prefWidth="400.0"
-              style="-fx-background-color: white; -fx-background-radius: 20; -fx-padding: 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 20, 0, 0, 10);">
+              style="-fx-background-color: white; -fx-background-radius: 25; -fx-padding: 30; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 25, 0, 0, 15);">
 
             <!-- Аватар -->
-            <VBox spacing="10" alignment="CENTER">
-                <ImageView fx:id="avatarImageView"
-                           fitWidth="80"
-                           fitHeight="80">
+            <VBox spacing="15" alignment="CENTER">
+                <ImageView fx:id="avatarImageView" fitWidth="120" fitHeight="120">
+                    <clip>
+                        <Circle centerX="60" centerY="60" radius="60"/>
+                    </clip>
                     <image>
                         <Image url="@default-avatar.png" />
                     </image>
                 </ImageView>
                 <Button fx:id="uploadAvatarButton"
-                        text="🖼️ Загрузить аватар"
-                        style="-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 8 20; -fx-background-radius: 15;"/>
+                        text="Загрузить аватар"
+                        style="-fx-background-color: linear-gradient(to right, #9C27B0, #673AB7); -fx-text-fill: white; -fx-font-weight: bold; -fx-padding: 10 25; -fx-background-radius: 20; -fx-font-size: 14; -fx-cursor: hand;"/>
             </VBox>
 
             <!-- Поля формы -->
-            <VBox spacing="12">
-                <Label text="Личные данные" style="-fx-font-weight: bold; -fx-font-size: 16; -fx-text-fill: #333; -fx-padding: 0 0 10 0;"/>
+            <VBox spacing="15">
+                <Label text="Личные данные"
+                       style="-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: linear-gradient(to right, #667eea, #764ba2); -fx-padding: 0 0 10 0;"/>
 
-                <HBox spacing="10">
-                    <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Имя*" style="-fx-text-fill: #555;"/>
+                <HBox spacing="15">
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Имя*" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                         <TextField fx:id="firstNameField"
                                    promptText="Ваше имя"
-                                   style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                                   style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                     </VBox>
 
-                    <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Фамилия*" style="-fx-text-fill: #555;"/>
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Фамилия*" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                         <TextField fx:id="lastNameField"
                                    promptText="Ваша фамилия"
-                                   style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                                   style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                     </VBox>
                 </HBox>
 
-                <VBox spacing="5">
-                    <Label text="Email*" style="-fx-text-fill: #555;"/>
+                <VBox spacing="8">
+                    <Label text="Email*" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                     <TextField fx:id="emailField"
                                promptText="example@mail.com"
-                               style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                               style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                 </VBox>
 
-                <Label text="Учетные данные" style="-fx-font-weight: bold; -fx-font-size: 16; -fx-text-fill: #333; -fx-padding: 10 0 0 0;"/>
+                <Label text="Учетные данные"
+                       style="-fx-font-weight: bold; -fx-font-size: 18; -fx-text-fill: linear-gradient(to right, #667eea, #764ba2); -fx-padding: 10 0 0 0;"/>
 
-                <VBox spacing="5">
-                    <Label text="Логин* (минимум 3 символа)" style="-fx-text-fill: #555;"/>
+                <VBox spacing="8">
+                    <Label text="Логин* (минимум 3 символа)" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                     <TextField fx:id="usernameField"
                                promptText="Придумайте логин"
-                               style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                               style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                 </VBox>
 
-                <HBox spacing="10">
-                    <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Пароль* (минимум 6 символов)" style="-fx-text-fill: #555;"/>
+                <HBox spacing="15">
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Пароль* (минимум 6 символов)" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                         <PasswordField fx:id="passwordField"
                                        promptText="Придумайте пароль"
-                                       style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                                       style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                     </VBox>
 
-                    <VBox spacing="5" HBox.hgrow="ALWAYS">
-                        <Label text="Подтвердите пароль*" style="-fx-text-fill: #555;"/>
+                    <VBox spacing="8" HBox.hgrow="ALWAYS">
+                        <Label text="Подтвердите пароль*" style="-fx-text-fill: #555; -fx-font-weight: bold;"/>
                         <PasswordField fx:id="confirmPasswordField"
                                        promptText="Повторите пароль"
-                                       style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 8; -fx-padding: 10;"/>
+                                       style="-fx-background-color: #f8f9fa; -fx-border-color: #e0e0e0; -fx-border-radius: 12; -fx-padding: 12; -fx-font-size: 14;"/>
                     </VBox>
                 </HBox>
             </VBox>
 
             <!-- Статус регистрации -->
             <Label fx:id="statusLabel" text=""
-                   style="-fx-font-size: 13; -fx-text-fill: #666; -fx-padding: 10 0; -fx-wrap-text: true;"/>
+                   style="-fx-font-size: 14; -fx-text-fill: #666; -fx-padding: 15 0 5 0; -fx-wrap-text: true;"/>
 
             <!-- Кнопки -->
-            <VBox spacing="10.0" style="-fx-padding: 10 0 0 0;">
+            <VBox spacing="12" style="-fx-padding: 10 0 0 0;">
                 <Button fx:id="registerButton"
                         text="✅ Зарегистрироваться"
-                        prefHeight="45.0"
+                        prefHeight="50.0"
                         defaultButton="true"
-                        style="-fx-background-color: linear-gradient(to right, #4CAF50, #8BC34A); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 16;"/>
+                        style="-fx-background-color: linear-gradient(to right, #4CAF50, #8BC34A); -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 25; -fx-font-size: 16; -fx-cursor: hand; -fx-effect: dropshadow(gaussian, rgba(76,175,80,0.3), 10, 0, 0, 5);"/>
 
                 <Button fx:id="backToLoginButton"
                         text="← Вернуться ко входу"
-                        style="-fx-background-color: transparent; -fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-border-color: #2196F3; -fx-border-radius: 25; -fx-border-width: 2; -fx-padding: 12;"/>
+                        style="-fx-background-color: transparent; -fx-text-fill: #2196F3; -fx-font-weight: bold; -fx-border-color: #2196F3; -fx-border-radius: 25; -fx-border-width: 2; -fx-padding: 12; -fx-cursor: hand;"/>
             </VBox>
         </VBox>
-    </ScrollPane>
 
-</VBox>
+        <!-- Пустое пространство внизу -->
+        <Region prefHeight="50"/>
+
+    </VBox>
+</ScrollPane>
