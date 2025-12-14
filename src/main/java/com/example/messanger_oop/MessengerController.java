@@ -88,7 +88,7 @@ public class MessengerController {
                 return;
             }
 
-            socket = new Socket("localhost", 12345);
+            socket = new Socket("10.209.209.41", 12345);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
             out = new PrintWriter(socket.getOutputStream(), true);
 

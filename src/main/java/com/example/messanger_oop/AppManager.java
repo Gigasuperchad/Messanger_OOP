@@ -277,7 +277,7 @@ public class AppManager {
 
             Stage statusStage = new Stage();
             statusStage.setTitle("Настройка статуса");
-            statusStage.setScene(new Scene(root, 400, 300));
+            statusStage.setScene(new Scene(root, 500, 450)); // Изменили размер
             statusStage.initOwner(stage); // Делаем окно модальным к главному
             statusStage.initModality(javafx.stage.Modality.WINDOW_MODAL);
             statusStage.show();
