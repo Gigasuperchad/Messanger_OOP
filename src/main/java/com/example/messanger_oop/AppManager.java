@@ -155,7 +155,7 @@ public class AppManager {
             // Принудительно запрашиваем список чатов с сервера
             if (localRepo.isConnectedToServer()) {
                 System.out.println("Запрашиваем список чатов с сервера...");
-                // Запрос списка чатов будет выполнен в setCurrentUser
+                localRepo.requestChatsFromServer();
             } else {
                 System.out.println("Работаем в автономном режиме");
             }

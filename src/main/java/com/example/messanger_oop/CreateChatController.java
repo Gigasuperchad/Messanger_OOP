@@ -32,6 +32,9 @@ public class CreateChatController {
     @FXML
     private Button cancelButton;
 
+    @FXML
+    private Label statusLabel;
+
     private List<User> allUsers;
     private User currentUser;
 
@@ -81,11 +84,13 @@ public class CreateChatController {
 
         if (currentUser == null) {
             System.err.println("Текущий пользователь не определен!");
+            showError("Ошибка", "Текущий пользователь не определен!");
             return;
         }
 
         System.out.println("Текущий пользователь для создания чата: " + currentUser.getNick());
 
+        // Загружаем пользователей из хранилища
         List<User> storedUsers = UserStorage.getAllUsers();
 
         if (storedUsers.isEmpty()) {
@@ -100,12 +105,15 @@ public class CreateChatController {
                 UserStorage.saveUser(user);
             }
         } else {
-            allUsers.addAll(storedUsers);
+            // Добавляем всех пользователей, кроме текущего
+            for (User user : storedUsers) {
+                if (!user.getNick().equals(currentUser.getNick())) {
+                    allUsers.add(user);
+                }
+            }
         }
 
-        allUsers.removeIf(user -> user.getNick().equals(currentUser.getNick()));
-
-        System.out.println("Загружено " + allUsers.size() + " пользователей для создания чата");
+        System.out.println("✅ Загружено " + allUsers.size() + " пользователей для создания чата");
 
         for (User user : allUsers) {
             System.out.println("   👤 " + user.getNick() + " - " + user.getFullName());
@@ -124,7 +132,8 @@ public class CreateChatController {
         if (selectedUser != null && !selectedUsersListView.getItems().contains(selectedUser)) {
             selectedUsersListView.getItems().add(selectedUser);
             usersListView.getItems().remove(selectedUser);
-            System.out.println("Добавлен пользователь: " + selectedUser.getNick());
+            System.out.println("✅ Добавлен пользователь: " + selectedUser.getNick());
+            updateStatus("Пользователь добавлен: " + selectedUser.getNick(), "green");
         }
     }
 
@@ -136,7 +145,8 @@ public class CreateChatController {
             if (!usersListView.getItems().contains(selectedUser)) {
                 usersListView.getItems().add(selectedUser);
             }
-            System.out.println("Удален пользователь: " + selectedUser.getNick());
+            System.out.println("❌ Удален пользователь: " + selectedUser.getNick());
+            updateStatus("Пользователь удален: " + selectedUser.getNick(), "orange");
         }
     }
 
@@ -146,55 +156,74 @@ public class CreateChatController {
         List<User> selectedUsers = new ArrayList<>(selectedUsersListView.getItems());
 
         if (chatName.isEmpty()) {
-            showAlert("Ошибка", "Введите название чата");
+            showError("Ошибка", "Введите название чата");
+            chatNameField.requestFocus();
             return;
         }
 
         if (selectedUsers.isEmpty()) {
-            showAlert("Ошибка", "Выберите хотя бы одного участника");
+            showError("Ошибка", "Выберите хотя бы одного участника");
             return;
         }
 
         if (currentUser == null) {
-            showAlert("Ошибка", "Текущий пользователь не определен");
+            showError("Ошибка", "Текущий пользователь не определен");
             return;
         }
 
+        // Проверяем подключение к серверу
+        Repository repository = AppManager.getInstance().getRepository();
+        if (repository instanceof LocalRepository) {
+            LocalRepository localRepo = (LocalRepository) repository;
+            if (!localRepo.isConnectedToServer()) {
+                int choice = showConfirmation("Предупреждение",
+                        "Сервер не подключен. Чат будет создан только локально.\n" +
+                                "Другие пользователи не увидят его до подключения к серверу.\n" +
+                                "Продолжить?");
+
+                if (choice != 0) {
+                    return;
+                }
+            }
+        }
+
         try {
-            // Создаем список всех участников
+            // Создаем список всех участников (текущий пользователь + выбранные)
             List<User> allChatUsers = new ArrayList<>(selectedUsers);
             allChatUsers.add(currentUser);
 
-            System.out.println("\nСОЗДАНИЕ НОВОГО ЧАТА:");
+            System.out.println("\n🎯 СОЗДАНИЕ НОВОГО ЧАТА:");
             System.out.println("   Название: " + chatName);
-            System.out.println("   Текущий пользователь: " + currentUser.getNick());
+            System.out.println("   Создатель: " + currentUser.getNick());
             System.out.println("   Всего участников: " + allChatUsers.size());
+            System.out.println("   Участники:");
             for (User user : allChatUsers) {
-                System.out.println("   👤 " + user.getNick());
+                System.out.println("   👤 " + user.getNick() + " - " + user.getFullName());
             }
 
+            // Создаем чат
             Chat newChat = new Chat(allChatUsers, chatName);
 
-            // Создаем приветственное сообщение
+            // Добавляем приветственное сообщение
             Message welcomeMessage = new Message(currentUser,
                     "Чат \"" + chatName + "\" создан! Добро пожаловать!", new java.util.Date());
             newChat.send_message(welcomeMessage);
 
-            System.out.println("Чат создан: " + newChat.getChatName() + " (ID: " + newChat.getId() + ")");
+            System.out.println("✅ Чат создан: " + newChat.getChatName() + " (ID: " + newChat.getId() + ")");
 
-            Repository repository = AppManager.getInstance().getRepository();
+            // Добавляем чат в репозиторий
             if (repository != null) {
                 repository.add_chat(newChat);
 
-                System.out.println("Чат добавлен в репозиторий");
+                System.out.println("✅ Чат добавлен в репозиторий");
+                updateStatus("Чат успешно создан!", "green");
 
-                closeWindow();
-
-                // Небольшая задержка перед обновлением списка чатов
+                // Закрываем окно через 1.5 секунды
                 new Thread(() -> {
                     try {
-                        Thread.sleep(1000);
+                        Thread.sleep(1500);
                         javafx.application.Platform.runLater(() -> {
+                            closeWindow();
                             System.out.println("Переход к списку чатов...");
                             AppManager.getInstance().switchToChatList();
                         });
@@ -202,13 +231,14 @@ public class CreateChatController {
                         e.printStackTrace();
                     }
                 }).start();
+
             } else {
-                System.err.println("Репозиторий не найден!");
-                showAlert("Ошибка", "Репозиторий не инициализирован");
+                System.err.println("❌ Репозиторий не найден!");
+                showError("Ошибка", "Репозиторий не инициализирован");
             }
 
         } catch (Exception e) {
-            showAlert("Ошибка", "Не удалось создать чат: " + e.getMessage());
+            showError("Ошибка", "Не удалось создать чат: " + e.getMessage());
             e.printStackTrace();
         }
     }
@@ -224,12 +254,43 @@ public class CreateChatController {
         stage.close();
     }
 
-    private void showAlert(String title, String message) {
+    private void showError(String title, String message) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    private int showConfirmation(String title, String message) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+
+        ButtonType yesButton = new ButtonType("Да", ButtonBar.ButtonData.YES);
+        ButtonType noButton = new ButtonType("Нет", ButtonBar.ButtonData.NO);
+        alert.getButtonTypes().setAll(yesButton, noButton);
+
+        java.util.Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == yesButton) {
+            return 0; // Да
+        } else {
+            return 1; // Нет
+        }
+    }
+
+    private void updateStatus(String message, String color) {
+        if (statusLabel != null) {
+            statusLabel.setText(message);
+            if (color.equals("green")) {
+                statusLabel.setStyle("-fx-text-fill: #4CAF50; -fx-font-weight: bold;");
+            } else if (color.equals("orange")) {
+                statusLabel.setStyle("-fx-text-fill: #FF9800; -fx-font-weight: bold;");
+            } else {
+                statusLabel.setStyle("-fx-text-fill: #2196F3; -fx-font-weight: bold;");
+            }
+        }
     }
 
     public void setCurrentUser(User user) {

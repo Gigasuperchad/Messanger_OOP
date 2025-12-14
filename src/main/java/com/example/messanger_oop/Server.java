@@ -67,16 +67,16 @@ public class Server {
 
     public void registerClient(String username, ClientHandler handler) {
         connectedClients.put(username, handler);
-        System.out.println("Client registered: " + username);
-        System.out.println("Total connected clients: " + connectedClients.size());
+        System.out.println("✅ Client registered: " + username);
+        System.out.println("   Total connected clients: " + connectedClients.size());
     }
 
     public void unregisterClient(String username) {
         connectedClients.remove(username);
         statusManager.setUserOffline(username);
         broadcastUserStatusChange(username, "OFFLINE");
-        System.out.println("Client unregistered: " + username);
-        System.out.println("Total connected clients: " + connectedClients.size());
+        System.out.println("❌ Client unregistered: " + username);
+        System.out.println("   Total connected clients: " + connectedClients.size());
     }
 
     public void broadcast(String message) {
@@ -149,70 +149,83 @@ public class Server {
 
             if (trimmed.startsWith("/create_chat ")) {
                 String payload = trimmed.substring("/create_chat ".length()).trim();
-                System.out.println("Creating chat with params: " + payload);
+                System.out.println("\n🎯 СОЗДАНИЕ ЧАТА:");
+                System.out.println("   От: " + username);
+                System.out.println("   Параметры: " + payload);
 
-                int idx = payload.indexOf(' ');
-                String usersPart = idx == -1 ? "" : payload.substring(0, idx);
-                String chatName = idx == -1 ? "Чат" : payload.substring(idx + 1).trim();
+                // Парсим участников и название чата
+                int spaceIdx = payload.lastIndexOf(' ');
+                String usersPart = spaceIdx == -1 ? "" : payload.substring(0, spaceIdx);
+                String chatName = spaceIdx == -1 ? "Новый чат" : payload.substring(spaceIdx + 1).trim();
+
+                System.out.println("   Участники: " + usersPart);
+                System.out.println("   Название: " + chatName);
 
                 List<User> users = new ArrayList<>();
-                User creator = userManager.getUser(username);
-                if (creator != null) {
-                    users.add(creator);
-                    System.out.println("Creator: " + username);
-                }
 
-                if (!usersPart.isEmpty()) {
-                    String[] parts = usersPart.split(",");
-                    System.out.println("Participants: " + Arrays.toString(parts));
-
-                    for (String u : parts) {
-                        User uu = userManager.getUser(u.trim());
-                        if (uu != null) {
-                            users.add(uu);
-                            System.out.println("Added participant: " + u);
+                // Добавляем всех участников из списка
+                String[] userNicks = usersPart.split(",");
+                for (String userNick : userNicks) {
+                    String nick = userNick.trim();
+                    if (!nick.isEmpty()) {
+                        User user = userManager.getUser(nick);
+                        if (user != null) {
+                            users.add(user);
+                            System.out.println("   ✅ Добавлен участник: " + nick);
                         } else {
-                            System.out.println("Participant not found: " + u);
-                            // Создаем временного пользователя если его нет на сервере
-                            uu = new User(u.trim());
-                            users.add(uu);
-                            System.out.println("Created temporary user: " + u);
+                            // Создаём пользователя если нет в системе
+                            user = new User(nick);
+                            users.add(user);
+                            System.out.println("   ⚠️ Создан временный пользователь: " + nick);
                         }
                     }
                 }
 
+                // Проверяем, что есть хотя бы 2 участника
+                if (users.size() < 2) {
+                    handler.sendMessage("[Сервер]: Для создания чата нужно минимум 2 участника");
+                    System.out.println("   ❌ Недостаточно участников: " + users.size());
+                    return;
+                }
+
+                // Создаём чат
                 Chat created = chatManager.createChat(users, chatName);
-                System.out.println("Chat created: " + created.getChatName() +
-                        " (ID " + created.getId() + ", users: " + users.size() + ")");
+                System.out.println("   ✅ Чат создан: " + created.getChatName() +
+                        " (ID: " + created.getId() + ", участников: " + users.size() + ")");
 
-                String confirmation = "[Сервер]: Чат \"" + created.getChatName() + "\" успешно создан!";
-                handler.sendMessage(confirmation);
+                // Добавляем приветственное сообщение
+                User creator = userManager.getUser(username);
+                if (creator != null) {
+                    Message welcomeMessage = new Message(creator,
+                            "Чат \"" + chatName + "\" создан! Добро пожаловать!", new Date());
+                    created.send_message(welcomeMessage);
+                    chatManager.saveChat(created);
+                }
 
-                // Отправляем приветственное сообщение
-                Message welcomeMessage = new Message(creator,
-                        "Чат \"" + chatName + "\" создан! Добро пожаловать!", new Date());
-                created.send_message(welcomeMessage);
-                chatManager.saveChat(created);
-
-                // Отправляем уведомление всем участникам
-                String notification = String.format("[Сервер]: Вас добавили в чат \"%s\"", chatName);
-
+                // Отправляем уведомление и информацию о чате ВСЕМ участникам
                 for (User participant : users) {
-                    // Если участник онлайн, отправляем ему уведомление и обновляем список чатов
                     ClientHandler participantHandler = connectedClients.get(participant.getNick());
                     if (participantHandler != null) {
-                        participantHandler.sendMessage(notification);
                         // Отправляем полную информацию о чате
                         sendFullChatInfo(created, participantHandler);
+
+                        // Отправляем уведомление
+                        String notification = String.format(
+                                "[Сервер]: Вас добавили в чат \"%s\" с участниками: %s",
+                                chatName, getParticipantsString(users, participant.getNick())
+                        );
+                        participantHandler.sendMessage(notification);
+
                         // Обновляем список чатов для участника
                         sendUserChats(participant.getNick(), participantHandler);
+
+                        System.out.println("   📨 Уведомление отправлено: " + participant.getNick());
                     } else {
-                        System.out.println("Participant " + participant.getNick() + " is offline");
+                        System.out.println("   ⚠️ Участник не в сети: " + participant.getNick());
                     }
                 }
 
-                // Отправляем создателю полную информацию о чате
-                sendFullChatInfo(created, handler);
+                handler.sendMessage("[Сервер]: Чат \"" + created.getChatName() + "\" успешно создан!");
                 return;
             }
 
@@ -293,6 +306,7 @@ public class Server {
                 }
                 return;
             }
+
             if (trimmed.startsWith("/delete_chat ")) {
                 String chatIdStr = trimmed.substring("/delete_chat ".length()).trim();
                 try {
@@ -314,6 +328,17 @@ public class Server {
             e.printStackTrace();
             handler.sendMessage("[Сервер]: Ошибка обработки команды: " + e.getMessage());
         }
+    }
+
+    private String getParticipantsString(List<User> users, String excludeUser) {
+        StringBuilder sb = new StringBuilder();
+        for (User user : users) {
+            if (!user.getNick().equals(excludeUser)) {
+                if (sb.length() > 0) sb.append(", ");
+                sb.append(user.getNick());
+            }
+        }
+        return sb.toString();
     }
 
     private void handleDeleteChat(String username, int chatId, ClientHandler handler) {
@@ -450,7 +475,7 @@ public class Server {
     }
 
     public void sendUserChats(String username, ClientHandler handler) {
-        System.out.println("Sending chat list to " + username);
+        System.out.println("📨 Sending chat list to " + username);
         List<Chat> chats = chatManager.getUserChats(username);
         System.out.println("   Found " + chats.size() + " chats for " + username);
 
@@ -464,10 +489,10 @@ public class Server {
         handler.sendMessage("CHAT_LIST_START");
         for (Chat chat : chats) {
             handler.sendMessage("CHAT:" + chat.getId() + ":" + chat.getChatName());
-            System.out.println("Sending chat: " + chat.getChatName() + " (ID: " + chat.getId() + ")");
+            System.out.println("   Sending chat: " + chat.getChatName() + " (ID: " + chat.getId() + ")");
         }
         handler.sendMessage("CHAT_LIST_END");
-        System.out.println("Chat list sent to " + username);
+        System.out.println("✅ Chat list sent to " + username);
 
         // После отправки списка чатов, отправляем полную информацию о каждом чате
         new Thread(() -> {

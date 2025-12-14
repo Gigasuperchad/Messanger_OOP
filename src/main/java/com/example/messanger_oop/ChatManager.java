@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class ChatManager {
     private static final String CHATS_DIR = "server_data/chats";
+    private static final String USER_CHATS_DIR = "server_data/user_chats";
     private Map<Integer, Chat> chatsCache = new ConcurrentHashMap<>();
     private Map<String, List<Integer>> userChatsMap = new ConcurrentHashMap<>();
     private static int nextId = 1;
@@ -14,6 +15,7 @@ public class ChatManager {
     public ChatManager() {
         try {
             Files.createDirectories(Paths.get(CHATS_DIR));
+            Files.createDirectories(Paths.get(USER_CHATS_DIR));
         } catch (IOException e) {
             System.err.println("Ошибка создания директорий: " + e.getMessage());
         }
@@ -32,7 +34,7 @@ public class ChatManager {
             return;
         }
 
-        System.out.println("Loading " + files.length + " chats from server storage...");
+        System.out.println("Loading " + files.length + " chats from com.example.messanger_oop.server storage...");
         for (File f : files) {
             try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(f))) {
                 Chat chat = (Chat) ois.readObject();
@@ -43,26 +45,28 @@ public class ChatManager {
                     List<Integer> userChats = userChatsMap.get(u.getNick());
                     if (!userChats.contains(chat.getId())) {
                         userChats.add(chat.getId());
-                        System.out.println(" Registered chat " + chat.getId() + " for user " + u.getNick());
+                        System.out.println("   Registered chat " + chat.getId() + " for user " + u.getNick());
                     }
                 }
 
                 if (chat.getId() >= nextId) {
                     nextId = chat.getId() + 1;
                 }
-                System.out.println(" Loaded chat: " + chat.getChatName() +
+                System.out.println("   Loaded chat: " + chat.getChatName() +
                         " (ID: " + chat.getId() +
                         ", users: " + chat.getUsers().size() + ")");
             } catch (Exception e) {
-                System.err.println(" Error loading chat from " + f.getName() + ": " + e.getMessage());
+                System.err.println("   Error loading chat from " + f.getName() + ": " + e.getMessage());
             }
         }
-        System.out.println(" Total loaded chats: " + chatsCache.size());
-        System.out.println(" Users with chats: " + userChatsMap.size());
+        System.out.println("✅ Total loaded chats: " + chatsCache.size());
+        System.out.println("   Users with chats: " + userChatsMap.size());
     }
 
     public synchronized Chat createChat(List<User> users, String chatName) {
-        System.out.println("🎯 Creating chat: " + chatName);
+        System.out.println("\n🎯 CREATING CHAT:");
+        System.out.println("   Name: " + chatName);
+        System.out.println("   Participants: " + users.size());
 
         // Проверяем существующие приватные чаты
         if (users.size() == 2) {
@@ -88,19 +92,19 @@ public class ChatManager {
 
         saveChat(chat);
 
-        // Регистрируем чат для всех участников
+        // Регистрируем чат для ВСЕХ участников
         for (User u : users) {
             userChatsMap.computeIfAbsent(u.getNick(), k -> new ArrayList<>());
             List<Integer> lst = userChatsMap.get(u.getNick());
             if (!lst.contains(chat.getId())) {
                 lst.add(chat.getId());
+                System.out.println("   ✅ Registered chat " + chat.getId() + " for user " + u.getNick());
             }
             saveUserChats(u.getNick(), lst);
-            System.out.println(" Registered chat " + chat.getId() + " for user " + u.getNick());
         }
 
         chatsCache.put(chat.getId(), chat);
-        System.out.println(" Chat created: " + chat.getChatName() +
+        System.out.println("✅ Chat created: " + chat.getChatName() +
                 " (ID " + chat.getId() +
                 ", users: " + users.size() + ")");
         return chat;
@@ -110,9 +114,9 @@ public class ChatManager {
         String filename = CHATS_DIR + "/chat_" + chat.getId() + ".dat";
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
             oos.writeObject(chat);
-            System.out.println("Chat saved: " + filename);
+            System.out.println("✅ Chat saved: " + filename);
         } catch (IOException e) {
-            System.err.println("Chat saving error: " + e.getMessage());
+            System.err.println("❌ Chat saving error: " + e.getMessage());
         }
     }
 
@@ -120,42 +124,66 @@ public class ChatManager {
         String filename = CHATS_DIR + "/user_" + username + "_chats.dat";
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filename))) {
             oos.writeObject(chatIds);
+            System.out.println("✅ User chat list saved for " + username + ": " + chatIds.size() + " chats");
         } catch (IOException e) {
-            System.err.println("User chat list saving error: " + e.getMessage());
+            System.err.println("❌ User chat list saving error: " + e.getMessage());
         }
     }
 
     public Chat getChat(int chatId) {
         Chat chat = chatsCache.get(chatId);
         if (chat == null) {
-            System.out.println("Chat not found ID: " + chatId);
+            System.out.println("❌ Chat not found ID: " + chatId);
         }
         return chat;
     }
 
+    private List<Integer> loadUserChats(String username) {
+        String filename = CHATS_DIR + "/user_" + username + "_chats.dat";
+        File file = new File(filename);
+        if (file.exists()) {
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+                return (List<Integer>) ois.readObject();
+            } catch (Exception e) {
+                System.err.println("❌ Error loading user chats for " + username + ": " + e.getMessage());
+            }
+        }
+        return new ArrayList<>();
+    }
+
     public List<Chat> getUserChats(String username) {
-        System.out.println("Searching chats for user: " + username);
-        List<Chat> result = new ArrayList<>();
+        System.out.println("\n🔍 Searching chats for user: " + username);
+
+        // Проверяем кэш
         List<Integer> ids = userChatsMap.getOrDefault(username, new ArrayList<>());
 
-        System.out.println("Found chat IDs: " + ids.size() + " -> " + ids);
-
+        // Если нет в кэше, загружаем из файла
         if (ids.isEmpty()) {
-            System.out.println(" No chats found for user " + username);
-            return result;
+            ids = loadUserChats(username);
+            if (!ids.isEmpty()) {
+                userChatsMap.put(username, ids);
+            }
         }
 
+        System.out.println("   Found chat IDs: " + ids.size() + " -> " + ids);
+
+        if (ids.isEmpty()) {
+            System.out.println("   No chats found for user " + username);
+            return new ArrayList<>();
+        }
+
+        List<Chat> result = new ArrayList<>();
         for (int id : ids) {
             Chat c = getChat(id);
             if (c != null) {
                 result.add(c);
-                System.out.println("Added chat: " + c.getChatName() + " (ID: " + id + ")");
+                System.out.println("   ✅ Added chat: " + c.getChatName() + " (ID: " + id + ")");
             } else {
-                System.out.println("Chat not found ID: " + id);
+                System.out.println("   ❌ Chat not found ID: " + id);
             }
         }
 
-        System.out.println("Total chats for " + username + ": " + result.size());
+        System.out.println("✅ Total chats for " + username + ": " + result.size());
         return result;
     }
 

@@ -26,10 +26,10 @@ public class LocalRepository implements Repository {
     }
 
     public boolean connectToServer() {
-        System.out.println("Trying to connect to server...");
+        System.out.println("Trying to connect to com.example.messanger_oop.server...");
         try {
             socket = new Socket();
-            socket.connect(new InetSocketAddress("127.0.0.0", 12345), 3000);
+            socket.connect(new InetSocketAddress("127.0.0.1", 12345), 3000);
             out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), "UTF-8"), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
             connectedToServer = true;
@@ -39,7 +39,7 @@ public class LocalRepository implements Repository {
                 authenticateOnServer();
             }
 
-            System.out.println("Connected to server");
+            System.out.println("Connected to com.example.messanger_oop.server");
             return true;
         } catch (IOException e) {
             System.err.println("Connection failed: " + e.getMessage());
@@ -55,10 +55,17 @@ public class LocalRepository implements Repository {
                 out.println("2");
                 out.println(currentUser.getNick());
                 out.println(currentUser.getPassword());
-                System.out.println("Authentication data sent to server");
+                System.out.println("Authentication data sent to com.example.messanger_oop.server");
             } catch (Exception e) {
                 System.err.println("Server auth error: " + e.getMessage());
             }
+        }
+    }
+
+    public void requestChatsFromServer() {
+        if (connectedToServer && out != null) {
+            out.println("/chats");
+            System.out.println("📡 Requested chat list from com.example.messanger_oop.server");
         }
     }
 
@@ -102,7 +109,7 @@ public class LocalRepository implements Repository {
                             javafx.application.Platform.runLater(() -> {
                                 Chats.clear();
                                 chatsLoaded = true;
-                                System.out.println("No chats from server");
+                                System.out.println("No chats from com.example.messanger_oop.server");
                             });
                         }
                         continue;
@@ -135,12 +142,20 @@ public class LocalRepository implements Repository {
                     }
 
                     // Обработка уведомления о добавлении в чат
-                    if (line.contains("Вас добавили в чат")) {
+                    if (line.contains("Вас добавили в чат") || line.contains("чат создан")) {
                         System.out.println("📨 Received chat invitation: " + line);
                         // Запрашиваем обновленный список чатов
-                        if (out != null) {
-                            out.println("/chats");
-                        }
+                        new Thread(() -> {
+                            try {
+                                Thread.sleep(1000);
+                                if (out != null) {
+                                    out.println("/chats");
+                                    System.out.println("📡 Requesting updated chat list after invitation");
+                                }
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }).start();
                         continue;
                     }
 
@@ -544,7 +559,7 @@ public class LocalRepository implements Repository {
         if (connectedToServer && out != null) {
             try {
                 out.println("/chat " + chat.getId() + " " + message);
-                System.out.println("Message sent to server");
+                System.out.println("Message sent to com.example.messanger_oop.server");
             } catch (Exception e) {
                 System.err.println("Send error: " + e.getMessage());
             }
@@ -623,7 +638,7 @@ public class LocalRepository implements Repository {
 
         if (!containsChat(chat.getId())) {
             Chats.add(chat);
-            System.out.println("Chat added to LocalRepository: " + chat.getChatName() +
+            System.out.println("✅ Chat added to LocalRepository: " + chat.getChatName() +
                     " (ID: " + chat.getId() + ", users: " + chat.getUsers().size() + ")");
 
             saveChatLocally(chat);
@@ -636,36 +651,40 @@ public class LocalRepository implements Repository {
             System.out.println("Chat with ID " + chat.getId() + " already exists, skipping");
         }
 
+        // Отправляем на сервер если подключены
         if (connectedToServer && out != null && currentUser != null) {
             try {
-                // Собираем список участников (кроме текущего пользователя)
+                // Собираем список ВСЕХ участников чата
                 StringBuilder usersStr = new StringBuilder();
                 for (User u : chat.getUsers()) {
-                    if (!u.getNick().equals(currentUser.getNick())) {
-                        if (usersStr.length() > 0) usersStr.append(",");
-                        usersStr.append(u.getNick());
-                    }
+                    if (usersStr.length() > 0) usersStr.append(",");
+                    usersStr.append(u.getNick());
                 }
 
-                if (usersStr.length() > 0) {
-                    String command = "/create_chat " + usersStr.toString() + " " + chat.getChatName();
-                    out.println(command);
-                    System.out.println("📡 Sent to server: " + command);
+                // Формат: /create_chat <участники> <название чата>
+                String command = "/create_chat " + usersStr.toString() + " " + chat.getChatName();
+                out.println(command);
+                System.out.println("📡 Sent to com.example.messanger_oop.server: " + command);
 
-                    // Ждем немного и запрашиваем обновленный список чатов
-                    new Thread(() -> {
-                        try {
-                            Thread.sleep(1000);
-                            out.println("/chats");
-                            System.out.println("📡 Requested updated chat list from server");
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }).start();
-                }
+                // Добавляем приветственное сообщение
+                Message welcomeMessage = new Message(currentUser,
+                        "Чат \"" + chat.getChatName() + "\" создан! Добро пожаловать!", new Date());
+                chat.send_message(welcomeMessage);
+
+                // Сохраняем чат с приветственным сообщением
+                saveChatLocally(chat);
+
+                // Отправляем сообщение в чат
+                String chatCommand = "/chat " + chat.getId() + " Чат \"" +
+                        chat.getChatName() + "\" создан! Добро пожаловать!";
+                out.println(chatCommand);
+
             } catch (Exception e) {
-                System.err.println("Server send error: " + e.getMessage());
+                System.err.println("❌ Server send error: " + e.getMessage());
+                e.printStackTrace();
             }
+        } else {
+            System.out.println("⚠️ Not connected to com.example.messanger_oop.server, chat saved locally only");
         }
     }
 
@@ -747,7 +766,7 @@ public class LocalRepository implements Repository {
         System.out.println("\nCHAT INFORMATION:");
         System.out.println("   Total chats: " + Chats.size());
         System.out.println("   Chats loaded: " + chatsLoaded);
-        System.out.println("   Connected to server: " + connectedToServer);
+        System.out.println("   Connected to com.example.messanger_oop.server: " + connectedToServer);
         System.out.println("   Current user: " + (currentUser != null ? currentUser.getNick() : "null"));
 
         for (int i = 0; i < Chats.size(); i++) {
@@ -856,4 +875,6 @@ public class LocalRepository implements Repository {
             System.err.println("Ошибка обновления файла чатов пользователя: " + e.getMessage());
         }
     }
+
+
 }
