@@ -4,6 +4,7 @@ import com.example.messanger_oop.shared.MessageDeliveryStatus;
 import com.example.messanger_oop.server.StatusManager;
 import com.example.messanger_oop.shared.UserStatus;
 import com.example.messanger_oop.shared.*;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -24,11 +25,12 @@ import javafx.animation.*;
 import javafx.util.Duration;
 import javafx.scene.effect.*;
 
-import java.util.Optional;
-import java.util.List;
-import java.util.Date;
+import java.util.*;
 import java.io.File;
 import java.nio.file.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class ChatController {
     @FXML
@@ -76,6 +78,12 @@ public class ChatController {
     private String selectedFileName;
     private String selectedFileType;
     private long selectedFileSize;
+    private Timer syncTimer;
+    private ScheduledExecutorService messageSyncExecutor;
+
+    // Для инкрементального обновления
+    private int lastMessageCount = 0;
+    private boolean isInitialLoad = true;
 
     @FXML
     public void initialize() {
@@ -97,6 +105,49 @@ public class ChatController {
         setupEventHandlers();
         setupAnimations();
         startStatusUpdates();
+        startRealTimeSync();
+
+        System.out.println("✅ ChatController инициализирован");
+    }
+
+    private void startMessageSync() {
+        if (messageSyncExecutor != null) {
+            messageSyncExecutor.shutdownNow();
+        }
+
+        messageSyncExecutor = Executors.newSingleThreadScheduledExecutor();
+        messageSyncExecutor.scheduleAtFixedRate(() -> {
+            if (chat != null && repository != null) {
+                // Инкрементальное обновление сообщений
+                Platform.runLater(this::updateMessagesIncremental);
+
+                // Обновляем список онлайн пользователей
+                updateOnlineUsersList();
+            }
+        }, 3, 3, TimeUnit.SECONDS); // Начинаем через 3 секунды, затем каждые 3 секунды
+
+        System.out.println("🔄 Инкрементальная синхронизация чата запущена");
+    }
+
+    private void startRealTimeSync() {
+        // Останавливаем предыдущий таймер если есть
+        if (syncTimer != null) {
+            syncTimer.cancel();
+        }
+
+        // Создаем новый таймер для синхронизации
+        syncTimer = new Timer(true);
+        syncTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                if (chat != null && repository != null) {
+                    // Обновляем статусы пользователей
+                    Platform.runLater(() -> updateOnlineUsersList());
+                }
+            }
+        }, 5000, 3000);
+
+        System.out.println("🔄 Синхронизация в реальном времени запущена");
     }
 
     private void setupAnimations() {
@@ -263,8 +314,8 @@ public class ChatController {
 
                 setGraphic(container);
 
-                // Анимация появления
-                if (appearAnimation != null) {
+                // Анимация появления только для новых сообщений (последние 3)
+                if (appearAnimation != null && getIndex() >= messages.size() - 3) {
                     appearAnimation.play();
                 }
             }
@@ -751,6 +802,8 @@ public class ChatController {
 
     public void setChat(Chat chat) {
         this.chat = chat;
+        this.lastMessageCount = 0; // Сбрасываем счетчик
+        this.isInitialLoad = true; // Устанавливаем флаг первой загрузки
 
         if (messageListView != null) {
             FadeTransition ft = new FadeTransition(Duration.millis(500), messageListView);
@@ -759,7 +812,12 @@ public class ChatController {
             ft.play();
         }
 
-        updateMessageList();
+        // Загружаем начальные сообщения
+        loadInitialMessages();
+
+        // Запускаем синхронизацию
+        startMessageSync();
+
         updateChatStatus();
     }
 
@@ -770,83 +828,169 @@ public class ChatController {
         }
     }
 
-    private void updateMessageList() {
+    // ========== ИНКРЕМЕНТАЛЬНОЕ ОБНОВЛЕНИЕ ==========
+
+    /**
+     * Загружает начальные сообщения с анимацией
+     */
+    private void loadInitialMessages() {
         if (chat != null) {
             messages.clear();
             List<Message> chatMessages = chat.getMessages();
-            if (chatMessages != null) {
+            if (chatMessages != null && !chatMessages.isEmpty()) {
                 for (Message message : chatMessages) {
-                    String timestamp = formatTimestamp(message.getTimestamp());
-                    String senderNick = message.getSender() != null ?
-                            message.getSender().getNick() : "Неизвестный";
-
-                    UserStatus senderStatus = StatusManager.getInstance().getUserStatus(senderNick);
-                    String statusIcon = senderStatus != null ? senderStatus.getIcon() : "⚫";
-
-                    String deliveryStatus = "";
-                    if (message.getDeliveryStatus() != null) {
-                        deliveryStatus = " " + message.getDeliveryStatus().getStatus().getIcon();
-                    }
-
-                    String messageDisplay;
-                    if (message.hasAttachment()) {
-                        if (message.getFileType() != null && message.getFileType().startsWith("image/")) {
-                            String fileInfo = "🖼️ " + message.getShortFileInfo();
-
-                            if (!message.getContent().isEmpty()) {
-                                messageDisplay = String.format("[%s] %s%s: %s | %s%s",
-                                        timestamp, statusIcon, senderNick, fileInfo,
-                                        message.getContent(), deliveryStatus);
-                            } else {
-                                messageDisplay = String.format("[%s] %s%s: %s%s",
-                                        timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
-                            }
-                        } else {
-                            String fileInfo = String.format("📎 %s (%s)",
-                                    message.getFileName(),
-                                    message.getFormattedFileSize());
-
-                            if (!message.getContent().isEmpty()) {
-                                messageDisplay = String.format("[%s] %s%s: %s | %s%s",
-                                        timestamp, statusIcon, senderNick, fileInfo,
-                                        message.getContent(), deliveryStatus);
-                            } else {
-                                messageDisplay = String.format("[%s] %s%s: %s%s",
-                                        timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
-                            }
-                        }
-                    } else {
-                        String content = message.getContent() != null ? message.getContent() : "";
-                        String editedMark = message.isEdited() ? " ✏️" : "";
-
-                        String readCount = "";
-                        int readCountNum = message.getReadCount();
-                        if (readCountNum > 0) {
-                            readCount = " 👁️" + readCountNum;
-                        }
-
-                        messageDisplay = String.format("[%s] %s%s: %s%s%s%s",
-                                timestamp, statusIcon, senderNick,
-                                content, editedMark, deliveryStatus, readCount);
-                    }
+                    String messageDisplay = formatMessageForDisplay(message);
                     messages.add(messageDisplay);
                 }
-            }
 
-            if (!messages.isEmpty()) {
-                PauseTransition pt = new PauseTransition(Duration.millis(100));
-                pt.setOnFinished(e -> {
-                    messageListView.scrollTo(messages.size() - 1);
-                    if (messagePulse != null) {
-                        messagePulse.play();
-                        PauseTransition stopPulse = new PauseTransition(Duration.seconds(2));
-                        stopPulse.setOnFinished(ev -> messagePulse.stop());
-                        stopPulse.play();
-                    }
-                });
-                pt.play();
+                lastMessageCount = chatMessages.size();
+
+                System.out.println("✅ Загружено " + lastMessageCount + " начальных сообщений");
+
+                // Анимация только при первой загрузке
+                if (isInitialLoad && !messages.isEmpty()) {
+                    Platform.runLater(() -> {
+                        messageListView.scrollTo(messages.size() - 1);
+                        if (messagePulse != null) {
+                            messagePulse.play();
+                            PauseTransition stopPulse = new PauseTransition(Duration.seconds(1));
+                            stopPulse.setOnFinished(ev -> messagePulse.stop());
+                            stopPulse.play();
+                        }
+                    });
+                    isInitialLoad = false;
+                }
             }
         }
+    }
+
+    /**
+     * Инкрементальное обновление только новых сообщений
+     */
+    private void updateMessagesIncremental() {
+        if (chat != null) {
+            List<Message> chatMessages = chat.getMessages();
+            if (chatMessages != null) {
+                int currentMessageCount = chatMessages.size();
+
+                // Если появились новые сообщения
+                if (currentMessageCount > lastMessageCount) {
+                    System.out.println("🆕 Найдено " + (currentMessageCount - lastMessageCount) + " новых сообщений");
+
+                    // Добавляем только новые сообщения
+                    for (int i = lastMessageCount; i < currentMessageCount; i++) {
+                        Message message = chatMessages.get(i);
+                        String messageDisplay = formatMessageForDisplay(message);
+                        messages.add(messageDisplay);
+
+                        // Анимируем только новые сообщения
+                        animateNewMessage(i);
+                    }
+
+                    // Прокручиваем к последнему сообщению
+                    Platform.runLater(() -> {
+                        messageListView.scrollTo(messages.size() - 1);
+                    });
+
+                    lastMessageCount = currentMessageCount;
+                }
+                // Если сообщений стало меньше (удаление)
+                else if (currentMessageCount < lastMessageCount) {
+                    System.out.println("🗑️ Удалено " + (lastMessageCount - currentMessageCount) + " сообщений");
+                    // Перезагружаем весь список
+                    loadInitialMessages();
+                }
+            }
+        }
+    }
+
+    /**
+     * Анимация нового сообщения
+     */
+    private void animateNewMessage(int messageIndex) {
+        Platform.runLater(() -> {
+            // Анимация появления новой ячейки
+            ListCell<String> cell = (ListCell<String>) messageListView.lookup(
+                    ".list-cell:nth-child(" + (messageIndex + 1) + ")");
+
+            if (cell != null) {
+                FadeTransition fadeIn = new FadeTransition(Duration.millis(300), cell);
+                fadeIn.setFromValue(0.3);
+                fadeIn.setToValue(1.0);
+                fadeIn.play();
+
+                ScaleTransition scale = new ScaleTransition(Duration.millis(300), cell);
+                scale.setFromX(0.95);
+                scale.setFromY(0.95);
+                scale.setToX(1.0);
+                scale.setToY(1.0);
+                scale.play();
+
+                // Звуковое уведомление
+                playNotificationSound();
+            }
+        });
+    }
+
+    /**
+     * Форматирует сообщение для отображения
+     */
+    private String formatMessageForDisplay(Message message) {
+        String timestamp = formatTimestamp(message.getTimestamp());
+        String senderNick = message.getSender() != null ?
+                message.getSender().getNick() : "Неизвестный";
+
+        UserStatus senderStatus = StatusManager.getInstance().getUserStatus(senderNick);
+        String statusIcon = senderStatus != null ? senderStatus.getIcon() : "⚫";
+
+        String deliveryStatus = "";
+        if (message.getDeliveryStatus() != null) {
+            deliveryStatus = " " + message.getDeliveryStatus().getStatus().getIcon();
+        }
+
+        String messageDisplay;
+        if (message.hasAttachment()) {
+            if (message.getFileType() != null && message.getFileType().startsWith("image/")) {
+                String fileInfo = "🖼️ " + message.getShortFileInfo();
+
+                if (!message.getContent().isEmpty()) {
+                    messageDisplay = String.format("[%s] %s%s: %s | %s%s",
+                            timestamp, statusIcon, senderNick, fileInfo,
+                            message.getContent(), deliveryStatus);
+                } else {
+                    messageDisplay = String.format("[%s] %s%s: %s%s",
+                            timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
+                }
+            } else {
+                String fileInfo = String.format("📎 %s (%s)",
+                        message.getFileName(),
+                        message.getFormattedFileSize());
+
+                if (!message.getContent().isEmpty()) {
+                    messageDisplay = String.format("[%s] %s%s: %s | %s%s",
+                            timestamp, statusIcon, senderNick, fileInfo,
+                            message.getContent(), deliveryStatus);
+                } else {
+                    messageDisplay = String.format("[%s] %s%s: %s%s",
+                            timestamp, statusIcon, senderNick, fileInfo, deliveryStatus);
+                }
+            }
+        } else {
+            String content = message.getContent() != null ? message.getContent() : "";
+            String editedMark = message.isEdited() ? " ✏️" : "";
+
+            String readCount = "";
+            int readCountNum = message.getReadCount();
+            if (readCountNum > 0) {
+                readCount = " 👁️" + readCountNum;
+            }
+
+            messageDisplay = String.format("[%s] %s%s: %s%s%s%s",
+                    timestamp, statusIcon, senderNick,
+                    content, editedMark, deliveryStatus, readCount);
+        }
+
+        return messageDisplay;
     }
 
     private String formatTimestamp(Date timestamp) {
@@ -854,6 +998,17 @@ public class ChatController {
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("HH:mm");
         return sdf.format(timestamp);
     }
+
+    private void playNotificationSound() {
+        try {
+            // Простое звуковое уведомление
+            java.awt.Toolkit.getDefaultToolkit().beep();
+        } catch (Exception e) {
+            // Игнорируем ошибки звука
+        }
+    }
+
+    // ========== ОСТАЛЬНЫЕ МЕТОДЫ ==========
 
     private void handleMessageDoubleClick(javafx.scene.input.MouseEvent event) {
         int selectedIndex = messageListView.getSelectionModel().getSelectedIndex();
@@ -1004,7 +1159,8 @@ public class ChatController {
                     repository.updateMessage(chat, index, updatedMessage);
                 }
 
-                updateMessageList();
+                // Обновляем только измененное сообщение
+                messages.set(index, formatMessageForDisplay(updatedMessage));
             }
         });
     }
@@ -1021,46 +1177,86 @@ public class ChatController {
             try {
                 sendButton.setText("⏳");
 
-                Message message;
+                Message message = null;
 
                 if (selectedFile != null) {
-                    String chatFilesDir = "chat_files/chat_" + chat.getId();
-                    File chatDir = new File(chatFilesDir);
-                    if (!chatDir.exists()) {
-                        chatDir.mkdirs();
+                    try {
+                        // Создаем директорию для файлов чата если нет
+                        String chatFilesDir = "chat_files/chat_" + chat.getId();
+                        java.io.File dir = new java.io.File(chatFilesDir);
+                        if (!dir.exists()) {
+                            dir.mkdirs();
+                        }
+
+                        // Копируем файл в директорию чата
+                        String uniqueFileName = System.currentTimeMillis() + "_" + selectedFile.getName();
+                        String filePath = chatFilesDir + "/" + uniqueFileName;
+                        java.nio.file.Files.copy(selectedFile.toPath(),
+                                new java.io.File(filePath).toPath(),
+                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+
+                        // Создаем сообщение с файлом
+                        message = new Message(currentUser,
+                                selectedFileName + " (вложение)",
+                                new java.util.Date());
+                        message.setFilePath(filePath);
+                        message.setFileName(selectedFileName);
+                        message.setFileType(selectedFileType);
+                        message.setFileSize(selectedFileSize);
+                        message.setHasAttachment(true);
+
+                        // Если есть текст, добавляем его к сообщению
+                        if (!text.isEmpty()) {
+                            message.setContent(text + " [прикреплен файл: " + selectedFileName + "]");
+                        }
+
+                        System.out.println("📎 Файл прикреплен: " + selectedFileName);
+
+                    } catch (Exception e) {
+                        System.err.println("❌ Ошибка прикрепления файла: " + e.getMessage());
+                        showAlert("Ошибка", "Не удалось прикрепить файл: " + e.getMessage(),
+                                Alert.AlertType.ERROR);
+                        isSending = false;
+                        sendButton.setText("Отправить");
+                        return;
                     }
-
-                    String uniqueFileName = System.currentTimeMillis() + "_" + selectedFileName;
-                    String filePath = chatFilesDir + "/" + uniqueFileName;
-                    Files.copy(selectedFile.toPath(), Paths.get(filePath), StandardCopyOption.REPLACE_EXISTING);
-
-                    message = new Message(currentUser, text, new Date(),
-                            filePath, selectedFileName, selectedFileType, selectedFileSize);
                 } else {
-                    message = new Message(currentUser, text, new Date());
+                    // Создаем текстовое сообщение
+                    message = new Message(currentUser, text, new java.util.Date());
+                }
+
+                // Проверяем, что сообщение создано
+                if (message == null) {
+                    throw new IllegalStateException("Сообщение не создано");
                 }
 
                 message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENDING);
 
+                // Отправляем через репозиторий
                 if (repository != null) {
-                    if (repository instanceof LocalRepository) {
-                        ((LocalRepository) repository).saveMessage(message, chat);
-                    } else {
-                        repository.send_msg(chat, text);
-                    }
+                    repository.saveMessage(message, chat);
 
+                    // Обновляем статус в реальном времени
                     message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENT);
                     message.markAsRead(currentUser.getNick());
-                } else {
-                    chat.send_message(message);
-                    message.getDeliveryStatus().setStatus(MessageDeliveryStatus.Status.SENT);
-                    message.markAsRead(currentUser.getNick());
+
+                    // Увеличиваем счетчик сообщений
+                    lastMessageCount++;
+
+                    // Добавляем сообщение в UI
+                    String messageDisplay = formatMessageForDisplay(message);
+                    messages.add(messageDisplay);
+
+                    // Анимируем новое сообщение
+                    animateNewMessage(messages.size() - 1);
+
+                    // Прокручиваем к последнему сообщению
+                    messageListView.scrollTo(messages.size() - 1);
                 }
-
-                updateMessageList();
 
                 messageTextArea.clear();
 
+                // Очищаем выбранный файл
                 selectedFile = null;
                 selectedFileName = null;
                 selectedFileType = null;
@@ -1068,20 +1264,28 @@ public class ChatController {
                 updateSelectedFileLabel();
 
                 sendButton.setText("✓");
-                PauseTransition pt = new PauseTransition(Duration.millis(500));
+                javafx.animation.PauseTransition pt = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.millis(500));
                 pt.setOnFinished(e -> sendButton.setText("Отправить"));
                 pt.play();
 
             } catch (Exception e) {
                 System.err.println("Ошибка при отправке сообщения: " + e.getMessage());
+                e.printStackTrace();
                 sendButton.setText("✗");
-                PauseTransition pt = new PauseTransition(Duration.millis(1000));
+                javafx.animation.PauseTransition pt = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.millis(1000));
                 pt.setOnFinished(ev -> sendButton.setText("Отправить"));
                 pt.play();
             } finally {
                 isSending = false;
             }
         } else {
+            // Показываем предупреждение если нечего отправлять
+            if (text.isEmpty() && selectedFile == null) {
+                showAlert("Предупреждение", "Введите сообщение или выберите файл",
+                        Alert.AlertType.WARNING);
+            }
             isSending = false;
         }
     }
@@ -1090,6 +1294,15 @@ public class ChatController {
     private void handleBackToChatList() {
         if (currentUser != null) {
             StatusManager.getInstance().updateLastSeen(currentUser.getNick());
+        }
+
+        // Останавливаем синхронизацию
+        if (messageSyncExecutor != null) {
+            messageSyncExecutor.shutdownNow();
+        }
+
+        if (syncTimer != null) {
+            syncTimer.cancel();
         }
 
         AppManager.getInstance().switchToChatList();
@@ -1112,26 +1325,28 @@ public class ChatController {
     }
 
     private void showAlert(String title, String message, Alert.AlertType type) {
-        Alert alert = new Alert(type);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
+        Platform.runLater(() -> {
+            Alert alert = new Alert(type);
+            alert.setTitle(title);
+            alert.setHeaderText(null);
+            alert.setContentText(message);
 
-        switch(type) {
-            case INFORMATION:
-                alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #e8f5e9, #c8e6c9); " +
-                        "-fx-border-color: #4CAF50; -fx-border-width: 2;");
-                break;
-            case WARNING:
-                alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #fff3e0, #ffe0b2); " +
-                        "-fx-border-color: #FF9800; -fx-border-width: 2;");
-                break;
-            case ERROR:
-                alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #ffebee, #ffcdd2); " +
-                        "-fx-border-color: #F44336; -fx-border-width: 2;");
-                break;
-        }
+            switch(type) {
+                case INFORMATION:
+                    alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #e8f5e9, #c8e6c9); " +
+                            "-fx-border-color: #4CAF50; -fx-border-width: 2;");
+                    break;
+                case WARNING:
+                    alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #fff3e0, #ffe0b2); " +
+                            "-fx-border-color: #FF9800; -fx-border-width: 2;");
+                    break;
+                case ERROR:
+                    alert.getDialogPane().setStyle("-fx-background-color: linear-gradient(to bottom, #ffebee, #ffcdd2); " +
+                            "-fx-border-color: #F44336; -fx-border-width: 2;");
+                    break;
+            }
 
-        alert.showAndWait();
+            alert.showAndWait();
+        });
     }
 }

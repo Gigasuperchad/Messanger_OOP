@@ -168,7 +168,7 @@ public class ClientConnection {
             System.err.println("⏰ Таймаут чтения от сервера");
             handleConnectionError("Таймаут соединения");
         } catch (IOException e) {
-            if (running) { // Логируем только если не было запланированного отключения
+            if (running) {
                 System.err.println("📛 Ошибка чтения от сервера: " + e.getMessage());
                 handleConnectionError("Соединение потеряно: " + e.getMessage());
             }
@@ -646,4 +646,6 @@ public class ClientConnection {
     public void setServerPort(int serverPort) {
         this.serverPort = serverPort;
     }
+
+
 }

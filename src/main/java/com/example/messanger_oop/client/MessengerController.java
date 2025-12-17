@@ -206,11 +206,11 @@ public class MessengerController {
         String usersStr = parts[1];
         if (usersStr.isEmpty()) return;
 
-        String[] userEntries = usersStr.split(ProtocolConstants.LIST_DELIMITER);
+        String[] userEntries = usersStr.split(String.valueOf(ProtocolConstants.LIST_DELIMITER));
         for (String entry : userEntries) {
             if (entry.isEmpty()) continue;
 
-            String[] fields = entry.split(ProtocolConstants.FIELD_DELIMITER);
+            String[] fields = entry.split(String.valueOf(ProtocolConstants.FIELD_DELIMITER));
             if (fields.length > 0) {
                 usersList.getItems().add(fields[0]);
             }

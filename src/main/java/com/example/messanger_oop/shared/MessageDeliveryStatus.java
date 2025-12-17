@@ -7,24 +7,25 @@ public class MessageDeliveryStatus implements Serializable {
     private static final long serialVersionUID = 1L;
 
     public enum Status {
-        SENDING("🕒 Отправляется"),
-        SENT("✓ Отправлено"),
-        DELIVERED("✓✓ Доставлено"),
-        READ("👁️ Прочитано"),
-        FAILED("❌ Ошибка");
+        SENDING("🔄 Отправляется"),      // Сообщение отправляется
+        SENT("✅ Отправлено"),           // Сообщение отправлено на сервер
+        DELIVERED("✓ Доставлено"),       // Сообщение доставлено получателю
+        READ("👁️ Прочитано"),           // Сообщение прочитано
+        FAILED("❌ Ошибка"),              // Ошибка при отправке
+        PENDING("⏳ Ожидает отправки");  // Сообщение в очереди (если нет сети)
 
-        private final String displayName;
+        private final String display;
 
-        Status(String displayName) {
-            this.displayName = displayName;
+        Status(String display) {
+            this.display = display;
         }
 
-        public String getDisplayName() {
-            return displayName;
+        public String getDisplay() {
+            return display;
         }
 
         public String getIcon() {
-            return displayName.split(" ")[0];
+            return display.split(" ")[0];
         }
     }
 
@@ -70,14 +71,14 @@ public class MessageDeliveryStatus implements Serializable {
 
     public String getDisplayStatus() {
         if (status == Status.FAILED && errorMessage != null) {
-            return status.getDisplayName() + ": " + errorMessage;
+            return status.getDisplay() + ": " + errorMessage;
         }
-        return status.getDisplayName();
+        return status.getDisplay();
     }
 
     public String getDetailedStatus() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Статус: ").append(status.getDisplayName());
+        sb.append("Статус: ").append(status.getDisplay());
 
         if (sentTime != null) {
             sb.append("\nОтправлено: ").append(formatTime(sentTime));

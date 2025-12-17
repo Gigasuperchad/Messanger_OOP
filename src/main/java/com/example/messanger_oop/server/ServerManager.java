@@ -82,7 +82,7 @@ public class ServerManager {
             chat.send_message(message);
             chatManager.saveChat(chat);
 
-            // Рассылка сообщения всем участникам чата
+            // Рассылка сообщения всем участникам чата в реальном времени
             String notification = ProtocolConstants.RESP_NEW_MESSAGE + ProtocolConstants.DELIMITER +
                     chatId + ProtocolConstants.FIELD_DELIMITER +
                     username + ProtocolConstants.FIELD_DELIMITER +
@@ -93,6 +93,7 @@ public class ServerManager {
                 ClientHandler handler = connectedClients.get(participant.getNick());
                 if (handler != null && !participant.getNick().equals(username)) {
                     handler.sendMessage(notification);
+                    System.out.println("📤 Отправлено уведомление пользователю " + participant.getNick());
                 }
             }
 
