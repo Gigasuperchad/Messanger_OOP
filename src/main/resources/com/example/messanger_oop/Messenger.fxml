@@ -6,7 +6,7 @@
 <?import javafx.scene.image.*?>
 
 <VBox xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.example.messanger_oop.MessengerController">
+      fx:controller="com.example.messanger_oop.client.MessengerController">
 
     <!-- Шапка с информацией о пользователе -->
     <HBox spacing="10" alignment="CENTER_LEFT" style="-fx-padding: 10; -fx-background-color: #f0f0f0;">

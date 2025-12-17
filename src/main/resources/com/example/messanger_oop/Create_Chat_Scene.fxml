@@ -9,7 +9,7 @@
 <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;"
             xmlns="http://javafx.com/javafx/17.0.2-ea"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.messanger_oop.CreateChatController">
+            fx:controller="com.example.messanger_oop.client.CreateChatController">
 
     <AnchorPane prefHeight="700.0" prefWidth="700.0"
                 style="-fx-background-color: linear-gradient(to bottom right, #667eea, #764ba2);">
