@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<VBox prefHeight="650.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.HelloController">
+<VBox prefHeight="650.0" prefWidth="400.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #667eea 0%, #764ba2 100%);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.client.HelloController">
 
     <padding>
         <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
@@ -20,19 +20,12 @@
     <VBox fx:id="chatListContainer" style="-fx-background-color: white; -fx-background-radius: 10; -fx-padding: 10; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);" VBox.vgrow="ALWAYS">
 
         <!-- Список чатов - ЗАНИМАЕТ ВСЁ ПРОСТРАНСТВО -->
-        <ListView fx:id="Chat_list" style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-width: 0; -fx-border-radius: 5;" VBox.vgrow="ALWAYS">
+        <ListView fx:id="Chat_list" prefHeight="760.0" prefWidth="329.0" style="-fx-background-color: transparent; -fx-background-insets: 0; -fx-padding: 0; -fx-border-width: 0; -fx-border-radius: 5;" VBox.vgrow="ALWAYS">
             <!-- Добавляем временный placeholder для отладки -->
             <placeholder>
                 <Label text="Нет чатов" />
             </placeholder>
         </ListView>
-
-        <!-- Подсказка при отсутствии чатов -->
-        <VBox fx:id="emptyChatsHint" alignment="CENTER" spacing="10" style="-fx-padding: 40 20;" visible="false">
-            <Label style="-fx-font-size: 48; -fx-text-fill: #ccc;" text="💬" />
-            <Label style="-fx-font-size: 14; -fx-text-fill: #888; -fx-text-alignment: center;" text="У вас пока нет чатов\nСоздайте первый чат!" wrapText="true" />
-            <Button mnemonicParsing="false" onAction="#handleCreateChat" style="-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 10; -fx-cursor: hand;" text="➕ Создать чат" />
-        </VBox>
     </VBox>
 
     <!-- Кнопки -->

@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<HBox prefHeight="650.0" prefWidth="800.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #eef1ff, #f8f9ff);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.ChatController">
+<HBox prefHeight="650.0" prefWidth="800.0" spacing="15.0" style="-fx-background-color: linear-gradient(to bottom, #eef1ff, #f8f9ff);" xmlns="http://javafx.com/javafx/17.0.12" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.messanger_oop.client.ChatController">
 
     <padding>
         <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />

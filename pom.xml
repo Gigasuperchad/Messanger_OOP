@@ -50,7 +50,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.example.messanger_oop.HelloApplication</mainClass>
+                    <mainClass>com.example.messanger_oop.client.HelloApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

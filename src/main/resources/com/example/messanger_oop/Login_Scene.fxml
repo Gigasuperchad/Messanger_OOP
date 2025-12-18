@@ -12,7 +12,7 @@
 
 <ScrollPane xmlns="http://javafx.com/javafx"
             xmlns:fx="http://javafx.com/fxml"
-            fx:controller="com.example.messanger_oop.LoginController"
+            fx:controller="com.example.messanger_oop.client.LoginController"
             fitToWidth="true"
             vbarPolicy="AS_NEEDED"
             hbarPolicy="NEVER"

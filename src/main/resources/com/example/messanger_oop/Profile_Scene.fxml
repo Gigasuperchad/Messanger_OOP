@@ -8,7 +8,7 @@
 <ScrollPane fitToWidth="true" style="-fx-background-color: transparent; -fx-border-color: transparent;"
             xmlns="http://javafx.com/javafx/17.0.12"
             xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.example.messanger_oop.ProfileController">
+            fx:controller="com.example.messanger_oop.client.ProfileController">
 
     <VBox alignment="CENTER" spacing="20.0"
           prefHeight="650" prefWidth="450"
